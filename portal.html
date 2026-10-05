@@ -1,0 +1,98 @@
+<meta charset="UTF-8">
+<title>Mi rutina</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --radius:16px;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --ground:#F3F6F4; --panel:#FFFFFF; --panel-2:#EAF1EC; --panel-3:#DFEBE2;
+    --ink:#16201A; --ink-2:#48564C; --ink-3:#7A897D;
+    --line:#D9E6DC;
+    --accent:#1F7A4D; --accent-ink:#17603C; --accent-soft:#DCEFE2;
+    --good:#2E7D37; --good-soft:#E3F1E4; --crit:#B93A33; --crit-soft:#F7E0DE; --warn:#B4791A; --warn-soft:#FBEBD2;
+    --shadow:0 1px 2px rgba(20,40,30,.06),0 10px 26px -14px rgba(20,40,30,.2);
+    --shadow-lg:0 2px 6px rgba(20,40,30,.08),0 30px 55px -24px rgba(20,40,30,.28);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:480px;margin:0 auto;padding:22px 16px 50px}
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .logo{width:48px;height:48px;border-radius:13px;overflow:hidden;display:grid;place-items:center;box-shadow:var(--shadow);flex-shrink:0;background:#0F1A13}
+  .logo img{width:100%;height:100%;object-fit:cover;display:block}
+  .brand h1{font-size:18px;margin:0;font-weight:750}
+  .brand span{display:block;font-size:11.5px;color:var(--ink-3);font-weight:600}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+  .card h2{margin:0 0 4px;font-size:16px}
+  .card .sub{color:var(--ink-3);font-size:12.5px;margin-bottom:4px}
+  .pill{display:inline-flex;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;margin-top:8px}
+  .pill.ok{background:var(--good-soft);color:var(--good)}
+  .pill.warn{background:var(--warn-soft);color:var(--warn)}
+  .pill.rep{background:var(--crit-soft);color:var(--crit)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
+  th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);font-weight:700;padding:0 8px 8px;border-bottom:1px solid var(--line)}
+  td{padding:10px 8px;border-bottom:1px solid var(--panel-2);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  .ejnom{font-weight:650}
+  .empty{text-align:center;color:var(--ink-3);font-size:13.5px;padding:20px 10px}
+  .loading{text-align:center;color:var(--ink-3);padding:60px 10px;font-size:14px}
+  .footer{margin-top:22px;color:var(--ink-3);font-size:11.5px;text-align:center}
+</style>
+<div class="wrap" id="app"><div class="loading">Cargando tu rutina…</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+"use strict";
+const SUPABASE_URL="https://tu-proyecto.supabase.co";
+const SUPABASE_ANON_KEY="tu-publishable-key-aqui";
+const sb=(typeof window.supabase!=="undefined")?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
+const DEFAULT_LOGO="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAgMTIwIj4KPGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iNTgiIGZpbGw9IiNEQ0VGRTIiIHN0cm9rZT0iIzFGN0E0RCIgc3Ryb2tlLXdpZHRoPSIzIi8+CjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDYwLDYwKSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMUY3QTREIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CjxsaW5lIHgxPSItMzQiIHkxPSIwIiB4Mj0iMzQiIHkyPSIwIi8+CjxsaW5lIHgxPSItMzQiIHkxPSItMTQiIHgyPSItMzQiIHkyPSIxNCIvPgo8bGluZSB4MT0iMzQiIHkxPSItMTQiIHgyPSIzNCIgeTI9IjE0Ii8+CjxsaW5lIHgxPSItMjAiIHkxPSItOCIgeDI9Ii0yMCIgeTI9IjgiLz4KPGxpbmUgeDE9IjIwIiB5MT0iLTgiIHgyPSIyMCIgeTI9IjgiLz4KPC9nPgo8L3N2Zz4=";
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function fdate(iso){if(!iso)return "—";const p=iso.split("-");return p.length===3?p[2]+"/"+p[1]:iso;}
+function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function diasHasta(fechaISO){const a=new Date(fechaISO+"T00:00:00"),b=new Date(today()+"T00:00:00");return Math.round((a-b)/86400000);}
+function estadoVencimiento(venc){
+  if(!venc)return {cls:"warn",txt:"Sin cuota registrada"};
+  const d=diasHasta(venc);
+  if(d<0)return {cls:"rep",txt:"Cuota vencida hace "+Math.abs(d)+" día"+(Math.abs(d)===1?"":"s")};
+  if(d<=7)return {cls:"warn",txt:d===0?"Tu cuota vence hoy":"Tu cuota vence en "+d+" día"+(d===1?"":"s")};
+  return {cls:"ok",txt:"Cuota al día · vence "+fdate(venc)};
+}
+function render(html){document.getElementById("app").innerHTML=html;}
+function pageError(msg){
+  render(`<div class="brand"><div class="logo"><img src="${DEFAULT_LOGO}" alt="Logo"></div><div><h1>Mi rutina</h1><span>Portal de socios</span></div></div>
+    <div class="card"><h2>No pudimos mostrar esta página</h2><div class="sub">${esc(msg)}</div></div>`);
+}
+(async function boot(){
+  if(!sb)return pageError("El portal todavía no está conectado. Pedile al gimnasio que termine de configurarlo.");
+  const token=new URLSearchParams(location.search).get("s");
+  if(!token)return pageError("Este link no tiene un código válido. Pedile el link a tu gimnasio.");
+  let data,error;
+  try{
+    const r=await sb.rpc("obtener_portal_socio",{p_token:token});
+    data=r.data;error=r.error;
+  }catch(e){error=e;}
+  if(error)return pageError("No pudimos conectar. Probá de nuevo en un rato.");
+  if(!data||!data.socio)return pageError("Este link no es válido. Pedile un link nuevo a tu gimnasio.");
+
+  const gym=data.gimnasio||{};
+  const socio=data.socio;
+  const rutina=data.rutina;
+  const est=estadoVencimiento(socio.vencimiento);
+  const ejercicios=(rutina&&rutina.ejercicios)||[];
+  const filas=ejercicios.length?ejercicios.map(e=>`<tr><td class="ejnom">${esc(e.nombre)}${e.notas?`<br><small style="color:var(--ink-3);font-weight:400">${esc(e.notas)}</small>`:""}</td><td>${esc(e.series)||"—"}</td><td>${esc(e.reps)||"—"}</td><td>${esc(e.peso)||"—"}</td></tr>`).join(""):"";
+
+  render(`
+    <div class="brand"><div class="logo"><img src="${esc(gym.logo||DEFAULT_LOGO)}" alt="Logo"></div><div><h1>${esc(gym.nombre||"Mi Gimnasio")}</h1><span>Portal de socios</span></div></div>
+    <div class="card">
+      <h2>Hola, ${esc(socio.nombre)}</h2>
+      <span class="pill ${est.cls}">${est.txt}</span>
+    </div>
+    <div class="card">
+      <h2>Tu rutina</h2>
+      <div class="sub">${rutina&&rutina.actualizado_en?"Actualizada el "+fdate(rutina.actualizado_en.slice(0,10)):""}</div>
+      ${ejercicios.length?`<table><thead><tr><th>Ejercicio</th><th>Series</th><th>Reps</th><th>Peso</th></tr></thead><tbody>${filas}</tbody></table>`:'<div class="empty">Todavía no tenés una rutina cargada. Pedísela a tu profesor.</div>'}
+    </div>
+    <p class="footer">Esta página es de uso personal — no la compartas, el link es tuyo.</p>
+  `);
+})();
+</script>

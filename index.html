@@ -1,0 +1,1255 @@
+<meta charset="UTF-8">
+<title>Gestión de Gimnasio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --radius:16px;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,"Cascadia Mono","Segoe UI Mono",Menlo,monospace;
+    --ground:#F3F6F4; --panel:#FFFFFF; --panel-2:#EAF1EC; --panel-3:#DFEBE2;
+    --ink:#16201A; --ink-2:#48564C; --ink-3:#7A897D;
+    --line:#D9E6DC; --line-2:#E7F0E9;
+    --accent:#1F7A4D; --accent-ink:#17603C; --accent-soft:#DCEFE2; --accent-2:#3FA06B;
+    --red:#B3352F; --red-soft:#F7E0DE;
+    --good:#2E7D37; --good-soft:#E3F1E4; --crit:#B93A33; --crit-soft:#F7E0DE; --warn:#B4791A; --warn-soft:#FBEBD2;
+    --shadow:0 1px 2px rgba(20,40,30,.06),0 10px 26px -14px rgba(20,40,30,.2);
+    --shadow-lg:0 2px 6px rgba(20,40,30,.08),0 30px 55px -24px rgba(20,40,30,.28);
+    --ease-out:cubic-bezier(.16,1,.3,1); --ease-in-out:cubic-bezier(.65,0,.35,1);
+  }
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased}
+  button{font-family:inherit;cursor:pointer}
+  input,select{font-family:inherit}
+  .tnum{font-variant-numeric:tabular-nums}
+  .wrap{max-width:1160px;margin:0 auto;padding:16px 16px 60px}
+
+  .topbar{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .brand{display:flex;align-items:center;gap:11px;min-width:0}
+  .logo{width:42px;height:42px;border-radius:11px;overflow:hidden;display:grid;place-items:center;box-shadow:var(--shadow);flex-shrink:0;background:#0F1A13}
+  .logo img{width:100%;height:100%;object-fit:cover;display:block}
+  .brand h1{font-size:18px;margin:0;letter-spacing:.02em;font-weight:750;font-style:italic}
+  .brand span{display:block;font-size:11px;color:var(--ink-3);font-weight:500;letter-spacing:.08em;text-transform:uppercase}
+  .spacer{flex:1}
+  .tbtn{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);font-size:12.5px;font-weight:600;padding:0 13px;height:40px;border-radius:11px;display:flex;align-items:center;gap:7px}
+  .tbtn:hover{border-color:var(--accent);color:var(--accent-ink)}
+  .tbtn.icon{width:40px;justify-content:center;padding:0;font-size:16px}
+  .who{display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:5px 6px 5px 12px;height:40px}
+  .who .av{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-weight:700;font-size:12px;color:#fff}
+  .who b{font-size:13px}.who small{font-size:10.5px;color:var(--ink-3);display:block;line-height:1}
+  .who .swap{border:0;background:var(--panel-2);color:var(--ink-2);font-size:11px;font-weight:700;padding:7px 10px;border-radius:8px}
+  .who .swap:hover{background:var(--accent);color:#fff}
+
+  .fade{animation:fade .3s ease}@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* profile selector */
+  .selstage{min-height:70vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+  .selstage .big-logo{width:96px;height:96px;border-radius:24px;overflow:hidden;display:grid;place-items:center;margin-bottom:18px;box-shadow:var(--shadow-lg);background:#0F1A13}
+  .selstage .big-logo img{width:100%;height:100%;object-fit:cover;display:block}
+  .selstage h2{font-size:26px;margin:0 0 6px;letter-spacing:-.01em}
+  .selstage .sub{color:var(--ink-3);font-size:14.5px;margin:0 0 30px}
+  .profgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;width:100%;max-width:660px}
+  .profcard{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;transition:.15s}
+  .profcard:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+  .profcard .pav{width:62px;height:62px;border-radius:16px;display:grid;place-items:center;font-weight:800;font-size:26px;color:#fff}
+  .profcard b{font-size:16px}.profcard small{font-size:11.5px;color:var(--ink-3)}
+  .profcard.owner{border-color:color-mix(in srgb,var(--accent) 40%,var(--line));background:linear-gradient(180deg,var(--accent-soft),var(--panel))}
+  .profcard.owner .pav{background:var(--panel-3);color:var(--accent-ink);border:1.5px solid var(--accent)}
+
+  /* pin */
+  .pinstage{min-height:70vh;display:grid;place-items:center;padding:20px}
+  .pincard{width:100%;max-width:340px;background:var(--panel);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow-lg);padding:30px 26px;text-align:center}
+  .pincard .lock{font-size:34px;margin-bottom:6px}
+  .pincard h3{font-size:20px;margin:0 0 4px}.pincard p{color:var(--ink-3);font-size:13px;margin:0 0 20px}
+  .pindots{display:flex;gap:14px;justify-content:center;margin-bottom:22px}
+  .pindot{width:16px;height:16px;border-radius:50%;border:2px solid var(--line-2);background:var(--panel-2);transition:.15s}
+  .pindot.on{background:var(--accent);border-color:var(--accent)}
+  .pindot.err{background:var(--crit);border-color:var(--crit);animation:shake .3s}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .keypad button{aspect-ratio:1.5;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);font-size:22px;font-weight:700;border-radius:12px}
+  .keypad button:hover{border-color:var(--accent);background:var(--panel-3)}
+  .keypad button.wide{font-size:14px;font-weight:600;color:var(--ink-3)}
+  .pinerr{color:var(--crit);font-size:12.5px;font-weight:600;margin-top:14px;min-height:16px}
+  .pinback{margin-top:16px;border:0;background:none;color:var(--ink-3);font-size:12.5px;font-weight:600}
+  .pinback:hover{color:var(--accent-ink)}
+
+  /* app shell */
+  .app{display:grid;grid-template-columns:210px 1fr;gap:14px}
+  @media (max-width:820px){.app{grid-template-columns:1fr}}
+  .side{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:11px 9px;display:flex;flex-direction:column;gap:2px;align-self:start;position:sticky;top:14px}
+  @media (max-width:820px){.side{position:static;flex-direction:row;flex-wrap:wrap}}
+  .side .sect{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);padding:10px 10px 5px}
+  .navitem{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;font-size:13.5px;color:var(--ink-2);font-weight:550;background:none;border:0;width:100%;text-align:left}
+  .navitem .gi{width:18px;text-align:center;font-size:15px}
+  .navitem:hover{background:var(--panel-2)}
+  .navitem.on{background:var(--accent);color:#fff;font-weight:700}
+  .navitem.on .gi{opacity:1}
+  .navitem .lk{margin-left:auto;font-size:11px}
+
+  .main{min-width:0}
+  .head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .head h2{margin:0;font-size:22px;letter-spacing:-.02em}
+  .head p{margin:2px 0 0;color:var(--ink-3);font-size:13px}
+  .ownerband{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:var(--accent-ink);background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);padding:5px 11px;border-radius:20px}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:14px}
+  @media (max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 15px}
+  .kpi .lbl{font-size:10px;color:var(--ink-3);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  .kpi .val{font-size:22px;font-weight:750;letter-spacing:-.03em;margin-top:5px}
+  .kpi .delta{font-size:11.5px;font-weight:650;margin-top:3px;color:var(--ink-3)}
+  .up-c{color:var(--good)}.dn-c{color:var(--crit)}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 17px;margin-bottom:13px}
+  .card:last-child{margin-bottom:0}
+  .card h3{margin:0 0 2px;font-size:15px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .card .sub{color:var(--ink-3);font-size:12px;margin-bottom:14px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  @media (max-width:820px){.grid2{grid-template-columns:1fr}}
+
+  .seg{display:inline-flex;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:16px}
+  .seg button{border:0;background:transparent;color:var(--ink-2);font-weight:700;font-size:14px;padding:9px 20px;border-radius:9px}
+  .seg button.sel{background:var(--accent);color:#fff}
+  .bigform{display:flex;flex-direction:column;gap:14px;max-width:560px}
+  .bf-row{display:flex;gap:12px;flex-wrap:wrap}
+  .bf{display:flex;flex-direction:column;gap:6px;flex:1;min-width:130px}
+  .bf label{font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+  .bf input,.bf select{background:var(--panel-2);border:1.5px solid var(--line);border-radius:11px;padding:13px 14px;font-size:16px;color:var(--ink);outline:none}
+  .bf input:focus,.bf select:focus{border-color:var(--accent);background:var(--panel-3)}
+  .bf .price-big{font-size:26px;font-weight:800;color:var(--accent-ink);letter-spacing:-.02em}
+  .cargar{border:0;background:var(--accent);color:#fff;font-weight:800;font-size:17px;padding:16px;border-radius:13px;box-shadow:var(--shadow);letter-spacing:.01em}
+  .cargar:hover{background:var(--accent-ink)}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{border:1.5px solid var(--line);background:var(--panel-2);color:var(--ink);font-size:14px;font-weight:650;padding:11px 15px;border-radius:11px;display:flex;flex-direction:column;gap:2px;align-items:flex-start;min-width:96px}
+  .chip small{font-size:11.5px;color:var(--ink-3);font-weight:600}
+  .chip.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+  .chip.sel small{color:var(--accent-ink)}
+
+  .addform{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px}
+  .ff{display:flex;flex-direction:column;gap:4px}.ff.grow{flex:1;min-width:120px}
+  .ff label{font-size:10px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+  .ff input,.ff select{background:var(--panel);border:1.5px solid var(--line);border-radius:9px;padding:9px 10px;font-size:13.5px;color:var(--ink);outline:none;min-width:0}
+  .ff input:focus,.ff select:focus{border-color:var(--accent)}
+  .ff input[type=number]{width:105px}.ff input[type=date]{width:145px}.ff input[type=time]{width:95px}
+  .addbtn{border:0;background:var(--accent);color:#fff;font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:9px;height:37px}
+  .addbtn:hover{background:var(--accent-ink)}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);font-weight:600;padding:0 10px 8px;border-bottom:1px solid var(--line)}
+  td{padding:9px 10px;border-bottom:1px solid var(--line-2)}
+  tr:last-child td{border-bottom:0}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .tbl-wrap{overflow-x:auto}
+  .del{border:0;background:none;color:var(--ink-3);font-size:15px;padding:2px 6px;border-radius:6px}
+  .del:hover{color:var(--crit);background:var(--crit-soft)}
+  .empty{text-align:center;color:var(--ink-3);font-size:13px;padding:26px 10px}
+  .totbar{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;margin-top:12px;font-size:13px}
+  .totbar b{font-size:18px;letter-spacing:-.02em;color:var(--accent-ink)}
+  .pill{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap}
+  .pill.ok{background:var(--good-soft);color:var(--good)}.pill.rep{background:var(--crit-soft);color:var(--crit)}
+  .pill.pend{background:var(--panel-3);color:var(--ink-3)}.pill.done{background:var(--good-soft);color:var(--good)}
+  .pill.warn{background:var(--warn-soft);color:var(--warn)}
+  tr.rowalert td{background:var(--warn-soft,#FBEBD2);animation:rowin .35s var(--ease-out)}
+  @keyframes rowin{from{background:var(--accent-soft)}to{background:var(--warn-soft,#FBEBD2)}}
+  .av-sm{width:26px;height:26px;border-radius:7px;display:inline-grid;place-items:center;font-weight:700;font-size:11px;color:#fff;vertical-align:middle;margin-right:7px}
+  .av-edit{position:relative;display:inline-block;border:0;background:none;padding:0;margin-right:7px;cursor:pointer;vertical-align:middle;border-radius:7px;transition:transform .15s var(--ease-out)}
+  .av-edit:hover{transform:scale(1.06)}
+  .av-edit .av-sm{margin-right:0}
+  .av-edit-badge{position:absolute;bottom:-4px;right:-4px;background:var(--accent);border:2px solid var(--panel);border-radius:50%;font-size:9px;width:16px;height:16px;display:grid;place-items:center;line-height:1}
+
+  .perm-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line-2)}
+  .perm-row:last-child{border-bottom:0}.perm-row .pn{flex:1;font-size:13.5px;font-weight:550}
+  .perm-row .pn small{display:block;color:var(--ink-3);font-size:11.5px;font-weight:400}
+  .miniin{background:var(--panel-2);border:1.5px solid var(--line);border-radius:9px;padding:8px 10px;font-size:14px;color:var(--ink);outline:none;width:110px;text-align:right}
+  .miniin:focus{border-color:var(--accent)}
+  .savebtn{border:0;background:var(--accent);color:#fff;font-weight:700;font-size:13px;padding:9px 15px;border-radius:9px}
+  .savebtn:hover{background:var(--accent-ink)}
+  .warnbox{background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);border-radius:11px;padding:11px 13px;font-size:12.5px;color:var(--ink-2);margin-bottom:14px}
+  .warnbox b{color:var(--accent-ink)}
+  .critbox{background:var(--crit-soft);border:1px solid color-mix(in srgb,var(--crit) 25%,transparent);border-radius:11px;padding:11px 13px;font-size:12.5px;color:var(--ink-2);margin-bottom:14px}
+  .critbox b{color:var(--crit)}
+
+  .footer{margin-top:22px;color:var(--ink-3);font-size:12px;text-align:center}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:#fff;font-size:14px;font-weight:700;padding:13px 22px;border-radius:12px;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:.3s;z-index:60}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .sociocard{display:flex;align-items:center;gap:12px;background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;width:100%;text-align:left}
+  .sociocard:hover{border-color:var(--accent)}
+  .sociocard .nm{flex:1;min-width:0}
+  .sociocard .nm b{display:block;font-size:14.5px}
+  .sociocard .nm small{color:var(--ink-3);font-size:12px}
+  .ejrow{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
+  .ejrow .ff{min-width:100px}
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><div class="logo"><img id="topbar-logo-img" src="" alt="Logo"></div><div><h1 id="topbar-name">Mi Gimnasio</h1><span>Gestión de gimnasio</span></div></div>
+    <div class="spacer"></div>
+    <div id="whoslot"></div>
+  </div>
+  <div id="root"></div>
+  <p class="footer" id="foot"></p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+"use strict";
+const $=(s,e=document)=>e.querySelector(s);
+const root=$("#root");
+const KEY="gimnasio_v1";
+const DEFAULT_LOGO="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAgMTIwIj4KPGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iNTgiIGZpbGw9IiNEQ0VGRTIiIHN0cm9rZT0iIzFGN0E0RCIgc3Ryb2tlLXdpZHRoPSIzIi8+CjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDYwLDYwKSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMUY3QTREIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CjxsaW5lIHgxPSItMzQiIHkxPSIwIiB4Mj0iMzQiIHkyPSIwIi8+CjxsaW5lIHgxPSItMzQiIHkxPSItMTQiIHgyPSItMzQiIHkyPSIxNCIvPgo8bGluZSB4MT0iMzQiIHkxPSItMTQiIHgyPSIzNCIgeTI9IjE0Ii8+CjxsaW5lIHgxPSItMjAiIHkxPSItOCIgeDI9Ii0yMCIgeTI9IjgiLz4KPGxpbmUgeDE9IjIwIiB5MT0iLTgiIHgyPSIyMCIgeTI9IjgiLz4KPC9nPgo8L3N2Zz4=";
+
+/* ---------- Supabase: compartido entre dispositivos ---------- */
+const SUPABASE_URL="https://tu-proyecto.supabase.co";
+const SUPABASE_ANON_KEY="tu-publishable-key-aqui";
+const sb=(typeof window.supabase!=="undefined")?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
+// evita que un pedido colgado (wifi/datos con problemas) deje algo esperando para siempre
+function conTimeout(promesa,ms){
+  return Promise.race([
+    promesa,
+    new Promise(resolve=>setTimeout(()=>resolve({data:null,error:{message:"timeout"}}),ms||8000))
+  ]);
+}
+async function cargarConfigRemota(){
+  if(!sb)return false;
+  try{
+    const {data,error}=await conTimeout(sb.from("config").select("*").eq("id","default").maybeSingle());
+    if(error||!data)return false;
+    if(data.nombre)DB.nombre=data.nombre;
+    if(data.logo!==undefined)DB.logo=data.logo;
+    if(data.planes&&data.planes.length)DB.planes=data.planes;
+    if(data.profesores&&data.profesores.length)DB.profesores=data.profesores;
+    return true;
+  }catch(e){return false;}
+}
+async function guardarConfigRemota(){
+  if(!sb)return;
+  try{
+    await conTimeout(sb.from("config").update({nombre:DB.nombre,logo:DB.logo,planes:DB.planes,profesores:DB.profesores,updated_at:new Date().toISOString()}).eq("id","default"));
+  }catch(e){}
+}
+
+/* ---------- socios, pagos, clases, asistencias, rutinas (sincronizados con Supabase) ---------- */
+function socioARemoto(s){return {id:s.id,nombre:s.nombre,telefono:s.telefono||null,dni:s.dni||null,fecha_alta:s.fechaAlta,plan_id:s.planId,vencimiento:s.vencimiento,activo:s.activo,foto:s.foto||null,token:s.token,notas:s.notas||null};}
+function socioDeRemoto(r){return {id:r.id,nombre:r.nombre,telefono:r.telefono,dni:r.dni,fechaAlta:r.fecha_alta,planId:r.plan_id,vencimiento:r.vencimiento,activo:r.activo,foto:r.foto,token:r.token,notas:r.notas||""};}
+async function cargarSociosRemotos(){
+  if(!sb)return false;
+  try{
+    const {data,error}=await conTimeout(sb.from("socios").select("*").order("nombre"));
+    if(error||!data)return false;
+    DB.socios=data.map(socioDeRemoto);
+    return true;
+  }catch(e){return false;}
+}
+async function guardarSocioRemoto(s){
+  if(!sb)return;
+  try{await conTimeout(sb.from("socios").upsert(socioARemoto(s)));}catch(e){}
+}
+async function borrarSocioRemoto(id){
+  if(!sb)return;
+  try{await conTimeout(sb.from("socios").delete().eq("id",id));}catch(e){}
+}
+async function guardarPagoRemoto(p){
+  if(!sb)return;
+  try{await conTimeout(sb.from("pagos").insert({id:p.id,socio_id:p.socioId,socio_nombre:p.socioNombre,plan_id:p.planId,plan_nombre:p.planNombre,monto:p.monto,fecha:p.fecha,hora:p.hora,medio_pago:p.pago,cobrado_por:p.cobradoPor}));}catch(e){}
+}
+async function cargarPagosRemotos(){
+  if(!sb)return false;
+  try{
+    const {data,error}=await conTimeout(sb.from("pagos").select("*").order("fecha",{ascending:false}).limit(500));
+    if(error||!data)return false;
+    DB.pagos=data.map(p=>({id:p.id,socioId:p.socio_id,socioNombre:p.socio_nombre,planId:p.plan_id,planNombre:p.plan_nombre,monto:p.monto,fecha:p.fecha,hora:p.hora,pago:p.medio_pago,cobradoPor:p.cobrado_por,mes:monthOf(p.fecha)}));
+    return true;
+  }catch(e){return false;}
+}
+function claseARemoto(c){return {id:c.id,nombre:c.nombre,profesor:c.profesor,dia:c.dia,hora_inicio:c.horaInicio,hora_fin:c.horaFin,cupo:c.cupo};}
+function claseDeRemoto(r){return {id:r.id,nombre:r.nombre,profesor:r.profesor,dia:r.dia,horaInicio:r.hora_inicio,horaFin:r.hora_fin,cupo:r.cupo};}
+async function cargarClasesRemotas(){
+  if(!sb)return false;
+  try{
+    const {data,error}=await conTimeout(sb.from("clases").select("*").order("dia").order("hora_inicio"));
+    if(error||!data)return false;
+    DB.clases=data.map(claseDeRemoto);
+    return true;
+  }catch(e){return false;}
+}
+async function guardarClaseRemota(c){
+  if(!sb)return;
+  try{await conTimeout(sb.from("clases").upsert(claseARemoto(c)));}catch(e){}
+}
+async function borrarClaseRemota(id){
+  if(!sb)return;
+  try{await conTimeout(sb.from("clases").delete().eq("id",id));}catch(e){}
+}
+async function guardarAsistenciaRemota(a){
+  if(!sb)return;
+  try{await conTimeout(sb.from("asistencias").insert({id:a.id,socio_id:a.socioId,socio_nombre:a.socioNombre,fecha:a.fecha,hora:a.hora,clase_id:a.claseId,clase_nombre:a.claseNombre,registrado_por:a.registradoPor}));}catch(e){}
+}
+async function cargarAsistenciasRemotas(fecha){
+  if(!sb)return false;
+  try{
+    const {data,error}=await conTimeout(sb.from("asistencias").select("*").eq("fecha",fecha));
+    if(error||!data)return false;
+    DB.asistencias=DB.asistencias.filter(a=>a.fecha!==fecha).concat(data.map(a=>({id:a.id,socioId:a.socio_id,socioNombre:a.socio_nombre,fecha:a.fecha,hora:a.hora,claseId:a.clase_id,claseNombre:a.clase_nombre,registradoPor:a.registrado_por})));
+    return true;
+  }catch(e){return false;}
+}
+async function guardarRutinaRemota(r){
+  if(!sb)return;
+  try{await conTimeout(sb.from("rutinas").upsert({socio_id:r.socioId,socio_nombre:r.socioNombre,ejercicios:r.ejercicios,actualizado_en:new Date().toISOString(),actualizado_por:r.actualizadoPor}));}catch(e){}
+}
+async function cargarRutinasRemotas(){
+  if(!sb)return false;
+  try{
+    const {data,error}=await conTimeout(sb.from("rutinas").select("*"));
+    if(error||!data)return false;
+    DB.rutinas=data.map(r=>({socioId:r.socio_id,socioNombre:r.socio_nombre,ejercicios:r.ejercicios||[],actualizadoEn:r.actualizado_en,actualizadoPor:r.actualizado_por}));
+    return true;
+  }catch(e){return false;}
+}
+
+/* ---------- perfiles (login real: cada persona entra con su mail y el sistema recuerda si es dueño o qué profesor es) ---------- */
+async function cargarPerfil(uid){
+  if(!sb)return null;
+  try{
+    const {data,error}=await conTimeout(sb.from("perfiles").select("*").eq("id",uid).maybeSingle());
+    if(error||!data)return null;
+    return data;
+  }catch(e){return null;}
+}
+async function cargarPerfilesRemotos(){
+  if(!sb)return [];
+  try{
+    const {data,error}=await conTimeout(sb.from("perfiles").select("*").order("tipo",{ascending:false}));
+    if(error||!data)return [];
+    return data;
+  }catch(e){return [];}
+}
+async function borrarPerfilRemoto(id){
+  if(!sb)return false;
+  try{const {error}=await conTimeout(sb.from("perfiles").delete().eq("id",id));return !error;}catch(e){return false;}
+}
+/* ---------- invitaciones (códigos de un solo uso para darle acceso a un profesor, sin tocar Supabase) ---------- */
+function generarCodigoInvitacion(){
+  const alfabeto="ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // sin 0/O/1/I/L, para que sea fácil de tipear a mano
+  let cod="";
+  for(let i=0;i<8;i++){
+    if(i===4)cod+="-";
+    cod+=alfabeto[Math.floor(Math.random()*alfabeto.length)];
+  }
+  return cod;
+}
+async function crearInvitacionRemota(tipo,nombre){
+  if(!sb||!S.authUser)return null;
+  const codigo=generarCodigoInvitacion();
+  try{
+    const {error}=await conTimeout(sb.from("invitaciones").insert({codigo,tipo,nombre:nombre||null,creado_por:S.authUser.id}));
+    if(error)return null;
+    return codigo;
+  }catch(e){return null;}
+}
+async function cargarInvitacionesRemotas(){
+  if(!sb)return [];
+  try{
+    const {data,error}=await conTimeout(sb.from("invitaciones").select("*").order("creado_en",{ascending:false}));
+    if(error||!data)return [];
+    return data;
+  }catch(e){return [];}
+}
+async function canjearInvitacion(uid,email,codigo){
+  if(!sb)return {ok:false,msg:"Sin conexión."};
+  try{
+    const {error}=await conTimeout(sb.from("perfiles").insert({id:uid,email,codigo_invitacion:codigo||null,tipo:"owner"}));
+    if(error)return {ok:false,msg:error.message&&/inv[aá]lido|usado|dueñ|dueno/i.test(error.message)?error.message:"No se pudo validar el código. Probá de nuevo."};
+    return {ok:true};
+  }catch(e){return {ok:false,msg:"No se pudo validar el código. Probá de nuevo."};}
+}
+
+/* ---------- default data (plantilla en blanco) ---------- */
+function defaultDB(){
+  return {
+    nombre:"Mi Gimnasio",
+    logo:null,
+    pin:"1234",
+    profesores:[{n:"Profesor 1",foto:null},{n:"Profesor 2",foto:null}],
+    planes:[
+      {id:pid(),nombre:"Mensual",precio:15000,duracionDias:30,visible:true},
+      {id:pid(),nombre:"Trimestral",precio:40000,duracionDias:90,visible:true},
+      {id:pid(),nombre:"Clase suelta",precio:3000,duracionDias:1,visible:true},
+    ],
+    socios:[],
+    pagos:[],
+    clases:[
+      {id:pid(),nombre:"Funcional",profesor:"Profesor 1",dia:1,horaInicio:"18:00",horaFin:"19:00",cupo:15},
+      {id:pid(),nombre:"Spinning",profesor:"Profesor 2",dia:3,horaInicio:"19:00",horaFin:"20:00",cupo:12},
+    ],
+    asistencias:[],
+    rutinas:[],
+    gastos:[],
+    cierres:[],
+  };
+}
+function pid(){return Math.random().toString(36).slice(2,9);}
+function tokenSocio(){return Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,6);}
+function telefonoWhatsapp(tel){
+  let d=String(tel||"").replace(/\D/g,"");
+  if(!d)return null;
+  if(d.startsWith("54"))return d;
+  if(d.startsWith("0"))d=d.slice(1);
+  return "549"+d;
+}
+
+/* ---------- state ---------- */
+const S={profile:null,ownerUnlocked:false,tab:"finanzas",subFin:"panel",pinBuf:"",pinErr:"",facturarPendiente:null,
+  authReady:false,authUser:null,authMode:"login",authErr:"",authBusy:false,perfil:null,
+  onbCodigo:"",onbCodigoErr:"",accesos:[],accesosCargados:false,
+  invitaciones:[],invitacionesCargadas:false,nuevoInvNombre:"",nuevoInvCodigo:null,
+  ciQ:"",cuSocioId:"",cuPlanId:"",socQ:"",rutSocioId:"",rutEjercicios:null,cierreFecha:today()};
+const PAGOS=["Efectivo","Tarjeta de crédito","Tarjeta de débito","Mercado Pago"];
+const DIAS=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+let DB=null;
+
+function save(){try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}}
+function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r);}catch(e){}return null;}
+
+/* ---------- derived ---------- */
+const money=n=>"$"+Math.round(n||0).toLocaleString("es-AR");
+const monthOf=d=>(d||"").slice(0,7);
+const sumBy=(a,f)=>a.reduce((s,x)=>s+f(x),0);
+const CURM=today().slice(0,7);
+function planDe(id){return DB.planes.find(p=>p.id===id);}
+function socioDe(id){return DB.socios.find(s=>s.id===id);}
+function diasHasta(fechaISO){const a=new Date(fechaISO+"T00:00:00"),b=new Date(today()+"T00:00:00");return Math.round((a-b)/86400000);}
+function estadoVencimiento(venc){
+  if(!venc)return {cls:"warn",txt:"Sin cuota"};
+  const d=diasHasta(venc);
+  if(d<0)return {cls:"rep",txt:"Vencido hace "+Math.abs(d)+" día"+(Math.abs(d)===1?"":"s")};
+  if(d<=7)return {cls:"warn",txt:d===0?"Vence hoy":"Vence en "+d+" día"+(d===1?"":"s")};
+  return {cls:"ok",txt:"Al día · vence "+fdate(venc)};
+}
+function registrarPago(socio,plan,medio,fecha){
+  const base=(socio.vencimiento&&diasHasta(socio.vencimiento)>=0)?socio.vencimiento:fecha;
+  const nuevoVenc=sumarDias(base,plan.duracionDias);
+  socio.vencimiento=nuevoVenc;socio.activo=true;
+  const pago={id:pid(),socioId:socio.id,socioNombre:socio.nombre,planId:plan.id,planNombre:plan.nombre,monto:plan.precio,fecha,hora:nowTime(),pago:medio,cobradoPor:S.profile.type==="owner"?"Dueño":S.profile.name,mes:monthOf(fecha)};
+  DB.pagos.unshift(pago);
+  return pago;
+}
+function sumarDias(fechaISO,dias){const d=new Date(fechaISO+"T00:00:00");d.setDate(d.getDate()+dias);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function sociosActivos(){return DB.socios.filter(s=>s.vencimiento&&diasHasta(s.vencimiento)>=0);}
+function sociosPorVencer(){return DB.socios.filter(s=>s.vencimiento&&diasHasta(s.vencimiento)>=0&&diasHasta(s.vencimiento)<=7);}
+function sociosVencidos(){return DB.socios.filter(s=>!s.vencimiento||diasHasta(s.vencimiento)<0);}
+function ingMes(m){return sumBy(DB.pagos.filter(p=>p.mes===m),p=>p.monto);}
+function gananciaMes(m){return ingMes(m)-sumBy(DB.gastos.filter(g=>monthOf(g.fecha)===m),g=>g.monto);}
+
+/* ---------- cierre diario (caja) ---------- */
+function pagosDia(fecha){return DB.pagos.filter(p=>p.fecha===fecha);}
+function gastosDia(fecha){return DB.gastos.filter(g=>g.fecha===fecha);}
+function cierreExistente(fecha){return DB.cierres.find(c=>c.fecha===fecha)||null;}
+function calcularCierre(fecha){
+  const pagos=pagosDia(fecha),gastos=gastosDia(fecha);
+  const facturadoTotal=sumBy(pagos,p=>p.monto);
+  const gastosTotal=sumBy(gastos,g=>g.monto);
+  const gananciaNeta=facturadoTotal-gastosTotal;
+  const porMedio={};
+  PAGOS.forEach(m=>{
+    const ing=sumBy(pagos.filter(p=>(p.pago||"Efectivo")===m),p=>p.monto);
+    const egr=sumBy(gastos.filter(g=>(g.pago||"Efectivo")===m),g=>g.monto);
+    porMedio[m]={ingresos:ing,egresos:egr,neto:ing-egr};
+  });
+  return {pagosCant:pagos.length,facturadoTotal,gastosTotal,gananciaNeta,porMedio};
+}
+function cerrarDia(fecha){
+  const pagos=JSON.parse(JSON.stringify(pagosDia(fecha)));
+  const gastos=JSON.parse(JSON.stringify(gastosDia(fecha)));
+  const totales=calcularCierre(fecha);
+  const nuevo={id:pid(),fecha,cerradoEn:new Date().toISOString(),cerradoPor:S.profile.type==="owner"?"Dueño":S.profile.name,pagos,gastos,totales};
+  DB.cierres=DB.cierres.filter(c=>c.fecha!==fecha);
+  DB.cierres.push(nuevo);
+  DB.cierres.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  commit("Día cerrado ✓ — registro guardado");
+}
+function fmtHora(iso){try{const d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}catch(e){return "";}}
+
+/* ---------- exportar CSV (para Excel, separador ; y con tildes) ---------- */
+function csvCell(v){const s=String(v==null?"":v);return /[";\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+function toCSV(headers,rows){const lines=[headers.map(csvCell).join(";")];rows.forEach(r=>lines.push(r.map(csvCell).join(";")));return "﻿"+lines.join("\r\n");}
+function descargarCSV(filename,headers,rows){
+  const csv=toCSV(headers,rows);
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  a.click();
+  toast("CSV descargado ✓");
+}
+function slugNombre(){return (DB.nombre||"gimnasio").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"")||"gimnasio";}
+function descargarCierresCSV(){
+  if(!DB.cierres.length)return toast("Todavía no cerraste ningún día");
+  const headers=["Fecha","Pagos","Facturado","Gastos","Ganancia neta",...PAGOS.map(m=>"Neto "+m),"Cerrado por","Hora de cierre"];
+  const rows=[...DB.cierres].sort((a,b)=>a.fecha.localeCompare(b.fecha)).map(c=>{
+    const t=c.totales;
+    return [fdate(c.fecha),t.pagosCant,t.facturadoTotal,t.gastosTotal,t.gananciaNeta,...PAGOS.map(m=>t.porMedio[m]?t.porMedio[m].neto:0),c.cerradoPor,fmtHora(c.cerradoEn)];
+  });
+  descargarCSV(slugNombre()+"-cierres-"+today()+".csv",headers,rows);
+}
+
+/* ---------- helpers ---------- */
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function fdate(iso){if(!iso)return "—";const p=iso.split("-");return p.length===3?p[2]+"/"+p[1]:iso;}
+function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function nowTime(){const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
+const AVCOL=["#1F7A4D","#3FA06B","#2E8F6B","#4A8F5C","#276B4A"];
+const avcol=n=>AVCOL[[...String(n)].reduce((a,c)=>a+c.charCodeAt(0),0)%AVCOL.length];
+function avatarHTML(nombre,foto,cls){
+  if(foto)return `<img class="${cls}" src="${foto}" style="object-fit:cover;display:block">`;
+  return `<span class="${cls}" style="background:${avcol(nombre)}">${esc((nombre[0]||"?").toUpperCase())}</span>`;
+}
+function leerFotoComoDataURL(file,maxSize,cb){
+  if(!file)return;
+  if(!file.type||!file.type.startsWith("image/"))return toast("Elegí un archivo de imagen");
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>h){if(w>maxSize){h=Math.round(h*maxSize/w);w=maxSize;}}
+      else{if(h>maxSize){w=Math.round(w*maxSize/h);h=maxSize;}}
+      const canvas=document.createElement("canvas");
+      canvas.width=w;canvas.height=h;
+      canvas.getContext("2d").drawImage(img,0,0,w,h);
+      cb(canvas.toDataURL("image/jpeg",0.85));
+    };
+    img.onerror=()=>toast("No se pudo leer esa imagen");
+    img.src=e.target.result;
+  };
+  reader.onerror=()=>toast("No se pudo leer el archivo");
+  reader.readAsDataURL(file);
+}
+let toastT;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),1700);}
+function val(s){const e=$(s);return e?String(e.value).trim():"";}
+function num(s){const e=$(s);return e?Math.max(0,+e.value||0):0;}
+function commit(msg){save();paintBrand();render();guardarConfigRemota();if(msg)toast(msg);}
+function paintBrand(){
+  document.title=(DB.nombre||"Mi Gimnasio")+" · Gestión de Gimnasio";
+  const l=document.getElementById("topbar-logo-img");if(l)l.src=DB.logo||DEFAULT_LOGO;
+  const n=document.getElementById("topbar-name");if(n)n.textContent=DB.nombre||"Mi Gimnasio";
+}
+
+/* ================= SELECTOR ================= */
+function viewSelect(){
+  return `<div class="selstage fade"><div class="big-logo"><img src="${DB.logo||DEFAULT_LOGO}" alt="Logo"></div>
+    <h2>¿Quién está usando el gimnasio?</h2><p class="sub">Elegí tu perfil para empezar.</p>
+    <div class="profgrid">
+      ${DB.profesores.map(b=>`<button class="profcard" data-barb="${esc(b.n)}">${avatarHTML(b.n,b.foto,"pav")}<b>${esc(b.n)}</b><small>Profesor</small></button>`).join("")}
+      <button class="profcard owner" data-owner="1"><span class="pav">D</span><b>Dueño</b><small>Requiere clave</small></button>
+    </div></div>`;
+}
+function bindSelect(){
+  document.querySelectorAll("[data-barb]").forEach(b=>b.onclick=()=>{S.profile={type:"barber",name:b.dataset.barb};S.tab="checkin";render();});
+  $("[data-owner]").onclick=()=>{S.pinBuf="";S.pinErr="";S.profile={type:"pin"};render();};
+}
+
+/* ================= PIN ================= */
+function viewPin(){
+  const dots=[0,1,2,3].map(i=>`<span class="pindot ${S.pinErr==="err"?"err":i<S.pinBuf.length?"on":""}"></span>`).join("");
+  const keys=[1,2,3,4,5,6,7,8,9].map(k=>`<button data-k="${k}">${k}</button>`).join("");
+  return `<div class="pinstage fade"><div class="pincard">
+    <h3>Modo Dueño</h3><p>Ingresá tu clave de 4 dígitos</p>
+    <div class="pindots">${dots}</div>
+    <div class="keypad">${keys}<button class="wide" data-k="clear">Borrar</button><button data-k="0">0</button><button class="wide" data-k="del">⌫</button></div>
+    <div class="pinerr">${S.pinErr==="err"?"Clave incorrecta. Probá de nuevo.":""}</div>
+    <button class="pinback" data-back="1">← Volver a perfiles</button>
+  </div></div>`;
+}
+function bindPin(){
+  document.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>pinPress(b.dataset.k));
+  $("[data-back]").onclick=()=>{S.profile=null;render();};
+}
+function pinPress(k){
+  if(k==="del")S.pinBuf=S.pinBuf.slice(0,-1);
+  else if(k==="clear")S.pinBuf="";
+  else if(S.pinBuf.length<4)S.pinBuf+=k;
+  S.pinErr="";
+  if(S.pinBuf.length===4){
+    if(S.pinBuf===DB.pin){S.profile={type:"owner"};S.ownerUnlocked=true;S.tab="finanzas";S.subFin="panel";render();return;}
+    else{S.pinErr="err";S.pinBuf="";render();setTimeout(()=>{S.pinErr="";render();},700);return;}
+  }
+  render();
+}
+// permite tipear el PIN con el teclado físico (números, Backspace, Escape)
+document.addEventListener("keydown",e=>{
+  if(!S.profile||S.profile.type!=="pin")return;
+  if(e.key>="0"&&e.key<="9"){pinPress(e.key);}
+  else if(e.key==="Backspace"){pinPress("del");}
+  else if(e.key==="Escape"){pinPress("clear");}
+});
+
+/* ================= LOGIN REAL (Supabase Auth) — reemplaza al selector+PIN cuando hay backend conectado ================= */
+function viewAuth(){
+  const signup=S.authMode==="signup";
+  return `<div class="pinstage fade"><div class="pincard">
+    <h3>${signup?"Crear tu acceso":"Iniciar sesión"}</h3>
+    <p>${signup?"Elegí tu mail y una clave. Después vas a necesitar el código de invitación que te dio el dueño del gimnasio.":"Entrá con tu mail y clave."}</p>
+    <div class="ff" style="text-align:left;margin-bottom:10px"><label>Email</label><input id="auth-email" type="email" placeholder="vos@ejemplo.com" autocomplete="username"></div>
+    <div class="ff" style="text-align:left;margin-bottom:14px"><label>Contraseña</label><input id="auth-pass" type="password" placeholder="••••••••" autocomplete="${signup?"new-password":"current-password"}"></div>
+    <button class="savebtn" id="auth-submit" style="width:100%;${S.authBusy?"opacity:.6":""}" ${S.authBusy?"disabled":""}>${S.authBusy?"Un momento…":(signup?"Crear acceso":"Entrar")}</button>
+    <button class="pinback" id="auth-toggle">${signup?"Ya tengo acceso":"Todavía no tengo acceso — crear cuenta"}</button>
+    <div class="pinerr">${esc(S.authErr)}</div>
+  </div></div>`;
+}
+function bindAuth(){
+  $("#auth-toggle").onclick=()=>{S.authMode=S.authMode==="signup"?"login":"signup";S.authErr="";render();};
+  const doSubmit=async()=>{
+    if(S.authBusy)return;
+    const email=val("#auth-email"),pass=val("#auth-pass");
+    if(!email||!pass){S.authErr="Completá email y contraseña";render();return;}
+    if(S.authMode==="signup"&&pass.length<6){S.authErr="La contraseña tiene que tener al menos 6 caracteres";render();return;}
+    S.authErr="";S.authBusy=true;render();
+    if(S.authMode==="signup"){
+      const{data,error}=await sb.auth.signUp({email,password:pass});
+      S.authBusy=false;
+      if(error){S.authErr="No pudimos crear la cuenta: "+error.message;render();return;}
+      if(!data.session){S.authErr="Cuenta creada. Revisá tu mail para confirmarla y después iniciá sesión.";S.authMode="login";render();return;}
+    }else{
+      const{error}=await sb.auth.signInWithPassword({email,password:pass});
+      S.authBusy=false;
+      if(error){S.authErr="No pudimos iniciar sesión. Revisá el mail y la clave.";render();return;}
+    }
+  };
+  $("#auth-submit").onclick=doSubmit;
+  $("#auth-pass").addEventListener("keydown",e=>{if(e.key==="Enter")doSubmit();});
+  $("#auth-email").addEventListener("keydown",e=>{if(e.key==="Enter")doSubmit();});
+}
+
+/* ================= ONBOARDING ================= */
+function viewOnboarding(){
+  return `<div class="selstage fade"><div class="big-logo"><img src="${DB.logo||DEFAULT_LOGO}" alt="Logo"></div>
+    <h2>¡Bienvenido/a!</h2><p class="sub">Es tu primera vez con este mail. Pedile al dueño el código de invitación que te generó y ponelo acá.</p>
+    <div class="addform" style="max-width:420px">
+      <div class="ff grow"><label>Código de invitación</label><input id="onb-codigo" placeholder="Ej: AB3D-EFGH" style="text-transform:uppercase" value="${esc(S.onbCodigo)}"></div>
+      <button class="addbtn" id="onb-validar" ${S.authBusy?"disabled":""}>${S.authBusy?"Un momento…":"Continuar"}</button>
+    </div>
+    <div class="pinerr">${esc(S.onbCodigoErr)}</div>
+    <button class="pinback" id="onb-bootstrap">¿Sos el dueño y es la primera vez que se usa este sistema? Entrar sin código</button>
+    <button class="pinback" id="onb-logout" style="margin-top:2px">Cerrar sesión</button>
+  </div></div>`;
+}
+function bindOnboarding(){
+  const doValidar=()=>{
+    const codigo=val("#onb-codigo").trim().toUpperCase();
+    if(!codigo)return toast("Poné el código de invitación");
+    canjear(codigo);
+  };
+  const va=$("#onb-validar");if(va)va.onclick=doValidar;
+  const inp=$("#onb-codigo");if(inp)inp.addEventListener("keydown",e=>{if(e.key==="Enter")doValidar();});
+  const bs=$("#onb-bootstrap");if(bs)bs.onclick=()=>canjear(null);
+  const lo=$("#onb-logout");if(lo)lo.onclick=async()=>{await sb.auth.signOut();};
+}
+async function canjear(codigo){
+  if(S.authBusy)return;
+  S.onbCodigo=codigo||"";S.onbCodigoErr="";S.authBusy=true;render();
+  const r=await canjearInvitacion(S.authUser.id,S.authUser.email,codigo);
+  S.authBusy=false;
+  if(!r.ok){S.onbCodigoErr=r.msg;render();return;}
+  const perfil=await cargarPerfil(S.authUser.id);
+  if(!perfil){S.onbCodigoErr="Se validó el código pero no pudimos cargar tu perfil. Probá de nuevo.";render();return;}
+  S.perfil={tipo:perfil.tipo,nombre:perfil.nombre,email:perfil.email};
+  S.onbCodigo="";
+  aplicarPerfil();
+  render();
+}
+function aplicarPerfil(){
+  if(!S.perfil)return;
+  if(S.perfil.tipo==="owner"){S.profile={type:"owner"};S.tab="finanzas";S.subFin="panel";}
+  else{S.profile={type:"barber",name:S.perfil.nombre};S.tab="checkin";}
+}
+
+/* ================= CAMBIO RÁPIDO DE PERFIL (solo para la cuenta del dueño) ================= */
+function viewQuickSwitch(){
+  return `<div class="selstage fade"><div class="big-logo"><img src="${DB.logo||DEFAULT_LOGO}" alt="Logo"></div>
+    <h2>¿Quién está trabajando?</h2><p class="sub">Elegí el perfil para operar rápido. Podés cambiar cuando quieras sin volver a loguearte.</p>
+    <div class="profgrid">
+      ${DB.profesores.map(b=>`<button class="profcard" data-qs-barb="${esc(b.n)}">${avatarHTML(b.n,b.foto,"pav")}<b>${esc(b.n)}</b><small>Profesor</small></button>`).join("")}
+      <button class="profcard owner" data-qs-owner="1"><span class="pav">D</span><b>Dueño</b><small>Requiere clave</small></button>
+    </div>
+  </div></div>`;
+}
+function bindQuickSwitch(){
+  document.querySelectorAll("[data-qs-barb]").forEach(b=>b.onclick=()=>{S.profile={type:"barber",name:b.dataset.qsBarb};S.tab="checkin";render();});
+  const ow=$("[data-qs-owner]");if(ow)ow.onclick=()=>{S.pinBuf="";S.pinErr="";S.profile={type:"pin"};render();};
+}
+
+/* ================= WHO SLOT ================= */
+function renderWho(){
+  const slot=$("#whoslot");
+  if(!S.profile||S.profile.type==="pin"){slot.innerHTML="";return;}
+  const isOwner=S.profile.type==="owner";
+  const name=isOwner?"Dueño":S.profile.name;
+  const barbObj=isOwner?null:DB.profesores.find(x=>x.n===name);
+  const cfgBtn=isOwner?`<button class="tbtn icon" data-tab="config" title="Configuración">⚙</button>`:"";
+  const esCuentaOwner=!!(sb&&S.authUser&&S.perfil&&S.perfil.tipo==="owner");
+  const accionBtn=esCuentaOwner
+    ?`<button class="swap" id="switchbtn">Cambiar perfil</button>`
+    :`<button class="swap" id="swapbtn">${sb&&S.authUser?"Cerrar sesión":"Cambiar"}</button>`;
+  slot.innerHTML=`<div style="display:flex;align-items:center;gap:8px">${cfgBtn}<div class="who">${isOwner?'<span class="av" style="background:var(--accent)">D</span>':avatarHTML(name,barbObj&&barbObj.foto,"av")}<div><b>${esc(name)}</b><small>${isOwner?"Modo privado":"Profesor"}</small></div>${accionBtn}</div></div>`;
+  const sw=$("#switchbtn");if(sw)sw.onclick=()=>{S.profile=null;render();};
+  const swap=$("#swapbtn");if(swap)swap.onclick=async()=>{
+    if(sb&&S.authUser){await sb.auth.signOut();}
+    else{S.profile=null;S.ownerUnlocked=false;render();}
+  };
+}
+
+/* ================= APP SHELL ================= */
+const BARB_NAV=[["checkin","Check-in"],["clases","Clases"],["rutinas","Rutinas"]];
+const OWNER_NAV=[["checkin","Check-in"],["clases","Clases"],["finanzas","Finanzas"]];
+const FIN_SUB=[
+  ["panel","Panel"],["socios","Socios"],["cuotas","Cuotas"],["rutinas","Rutinas"],
+  ["cierre","Cierre diario"],["profesores","Profesores"],["planes","Planes y precios"],["gastos","Gastos y sueldos"]];
+function viewApp(){
+  const isOwner=S.profile.type==="owner";
+  const nav=isOwner?OWNER_NAV:BARB_NAV;
+  if(!nav.find(n=>n[0]===S.tab)&&S.tab!=="config")S.tab=nav[0][0];
+  const navHTML=nav.map(n=>`<button class="navitem ${S.tab===n[0]?"on":""}" data-tab="${n[0]}">${n[1]}</button>`).join("");
+  const finSubHTML=(isOwner&&S.tab==="finanzas")?`<div class="sect" style="margin-top:8px">Finanzas</div>${FIN_SUB.map(n=>`<button class="navitem ${S.subFin===n[0]?"on":""}" data-subfin="${n[0]}">${n[1]}</button>`).join("")}`:"";
+  return `<div class="app fade"><aside class="side">${isOwner?'<div class="sect">Modo Dueño</div>':'<div class="sect">Profesor</div>'}${navHTML}${finSubHTML}</aside><div class="main">${renderTab()}</div></div>`;
+}
+function renderTab(){
+  const isOwner=S.profile.type==="owner";
+  if(!isOwner){
+    const R={checkin:tCheckin,clases:tClases,rutinas:tRutinas};
+    return (R[S.tab]||tCheckin)();
+  }
+  if(S.tab==="checkin")return tCheckin();
+  if(S.tab==="clases")return tClases();
+  if(S.tab==="config")return tConfig();
+  const FR={panel:tPanel,socios:tSocios,cuotas:tCuotas,rutinas:tRutinas,cierre:tCierre,profesores:tProfesores,planes:tPlanes,gastos:tGastos};
+  if(!FR[S.subFin])S.subFin="panel";
+  return (FR[S.subFin]||tPanel)();
+}
+function head(t,s,owner){return `<div class="head"><div><h2>${t}</h2><p>${s}</p></div>${owner?'<span class="ownerband">Solo dueño</span>':""}</div>`;}
+function curProfesor(){return S.profile.type==="barber"?S.profile.name:(S.profile.type==="owner"?"Dueño":null);}
+
+/* ================= FACTURAR (AFIP) — reutilizable en Cuotas ================= */
+function facturaCheckHTML(prefix,label){
+  return `<div class="bf" style="width:100%"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600"><input type="checkbox" id="${prefix}-fact-chk"> ${esc(label||"El cliente pidió factura")}</label></div>
+    <div id="${prefix}-fact-wrap" style="display:none;width:100%">
+      <div class="bf-row">
+        <div class="bf grow"><label>Nombre o razón social</label><input id="${prefix}-fact-nombre" placeholder="Ej: Juan Pérez"></div>
+        <div class="bf"><label>CUIT / DNI</label><input id="${prefix}-fact-doc" placeholder="Ej: 20-12345678-9"></div>
+      </div>
+    </div>`;
+}
+function facturarCard(f){
+  const texto=`Factura — ${DB.nombre||"Gimnasio"}\nCliente: ${f.cliente}\nCUIT/DNI: ${f.doc||"(Consumidor Final)"}\nConcepto: ${f.concepto}\nMonto: ${money(f.monto)}\nFecha: ${fdate(f.fecha)}`;
+  return `<div class="card fade" style="border-color:var(--accent);background:var(--accent-soft)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+      <div><h3 style="margin:0 0 4px">Facturar este cobro</h3><div class="sub">Copiá los datos y completalos en AFIP/ARCA (Comprobantes en línea) con tu Clave Fiscal.</div></div>
+      <button class="tbtn icon" id="fact-cerrar" title="Cerrar">✕</button>
+    </div>
+    <pre id="fact-texto" style="white-space:pre-wrap;background:var(--panel);padding:10px;border-radius:8px;font-size:13px;margin:10px 0;border:1px solid var(--line)">${esc(texto)}</pre>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="addbtn" id="fact-copiar">Copiar datos</button>
+      <a class="tbtn" href="https://www.afip.gob.ar/comprobantes-en-linea" target="_blank" rel="noopener">Abrir AFIP / ARCA →</a>
+    </div>
+  </div>`;
+}
+function bindFacturarCompartido(){
+  const fcerrar=$("#fact-cerrar");if(fcerrar)fcerrar.onclick=()=>{S.facturarPendiente=null;render();};
+  const fcopiar=$("#fact-copiar");if(fcopiar)fcopiar.onclick=()=>{
+    const t=$("#fact-texto").textContent;
+    (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(t):Promise.reject())
+      .then(()=>toast("Datos copiados ✓"))
+      .catch(()=>toast("No se pudo copiar — seleccioná el texto a mano"));
+  };
+}
+
+/* ================= CHECK-IN ================= */
+function portalLink(token){return location.href.replace(/index\.html.*$/,"")+"portal.html?s="+token;}
+function tCheckin(){
+  const q=(S.ciQ||"").toLowerCase();
+  const list=DB.socios.filter(s=>!q||s.nombre.toLowerCase().includes(q)||(s.dni||"").includes(q)).sort((a,b)=>a.nombre.localeCompare(b.nombre)).slice(0,30);
+  const rows=list.map(s=>{
+    const est=estadoVencimiento(s.vencimiento);
+    return `<button class="sociocard" data-ci-socio="${s.id}">${avatarHTML(s.nombre,s.foto,"av-sm")}<div class="nm"><b>${esc(s.nombre)}</b><small>${s.telefono?esc(s.telefono)+" · ":""}<span class="pill ${est.cls}">${est.txt}</span></small></div></button>`;
+  }).join("");
+  const hoy=DB.asistencias.filter(a=>a.fecha===today()).sort((a,b)=>b.hora.localeCompare(a.hora));
+  const hoyRows=hoy.length?hoy.map(a=>`<div class="perm-row"><span class="pn">${esc(a.socioNombre)}${a.claseNombre?' <small>'+esc(a.claseNombre)+'</small>':""}</span><span class="tnum" style="color:var(--ink-3);font-size:12px">${a.hora}</span></div>`).join(""):'<div class="empty">Todavía no entró nadie hoy.</div>';
+  return head("Check-in","Buscá al socio y tocá su tarjeta para registrar su entrada.")
+  +`<div class="addform" style="margin-bottom:16px"><div class="ff grow"><label>Buscar socio</label><input id="ci-q" placeholder="Nombre o DNI" value="${esc(S.ciQ)}"></div><button class="addbtn" id="ci-buscar">Buscar</button>${q?'<button class="tbtn" id="ci-limpiar" style="padding:11px 16px">Ver todos</button>':""}</div>
+  <div class="card"><h3>Socios</h3>${list.length?`<div style="display:flex;flex-direction:column;gap:8px">${rows}</div>`:'<div class="empty">Sin resultados. Dalo de alta primero en Socios.</div>'}</div>
+  <div class="card"><h3>Entraron hoy (${hoy.length})</h3>${hoyRows}</div>`;
+}
+function bindCheckin(){
+  const f=$("#ci-buscar");if(f)f.onclick=()=>{S.ciQ=val("#ci-q");render();};
+  const q=$("#ci-q");if(q)q.addEventListener("keydown",e=>{if(e.key==="Enter"){S.ciQ=q.value;render();}});
+  const l=$("#ci-limpiar");if(l)l.onclick=()=>{S.ciQ="";render();};
+  document.querySelectorAll("[data-ci-socio]").forEach(b=>b.onclick=()=>{
+    const s=socioDe(b.dataset.ciSocio);if(!s)return;
+    const a={id:pid(),socioId:s.id,socioNombre:s.nombre,fecha:today(),hora:nowTime(),claseId:null,claseNombre:null,registradoPor:curProfesor()};
+    DB.asistencias.unshift(a);
+    guardarAsistenciaRemota(a);
+    const est=estadoVencimiento(s.vencimiento);
+    commit(est.cls==="rep"?"Entrada registrada — ⚠ cuota vencida":"Entrada registrada ✓");
+  });
+}
+
+/* ================= CLASES ================= */
+function tClases(){
+  const isOwner=S.profile.type==="owner";
+  const form=`<div class="addform">
+    <div class="ff grow"><label>Nombre de la clase</label><input id="cl-nombre" placeholder="Ej: Funcional"></div>
+    <div class="ff"><label>Profesor</label><select id="cl-prof">${DB.profesores.map(b=>`<option>${esc(b.n)}</option>`).join("")}</select></div>
+    <div class="ff"><label>Día</label><select id="cl-dia">${DIAS.map((d,i)=>`<option value="${i}">${d}</option>`).join("")}</select></div>
+    <div class="ff"><label>Desde</label><input type="time" id="cl-ini" value="18:00"></div>
+    <div class="ff"><label>Hasta</label><input type="time" id="cl-fin" value="19:00"></div>
+    <div class="ff"><label>Cupo</label><input type="number" id="cl-cupo" value="15" min="1"></div>
+    <button class="addbtn" id="cl-add">＋ Agregar clase</button>
+  </div>`;
+  const ordenadas=[...DB.clases].sort((a,b)=>a.dia-b.dia||a.horaInicio.localeCompare(b.horaInicio));
+  const rows=ordenadas.length?ordenadas.map(c=>`<tr><td>${DIAS[c.dia]}</td><td>${c.horaInicio}–${c.horaFin}</td><td>${esc(c.nombre)}</td><td>${esc(c.profesor)}</td><td class="num">${c.cupo}</td><td><button class="del" data-delclase="${c.id}">✕</button></td></tr>`).join(""):`<tr><td colspan="6"><div class="empty">Todavía no hay clases cargadas.</div></td></tr>`;
+  return head("Clases","Horario semanal de clases del gimnasio.")
+  +form
+  +`<div class="card"><div class="tbl-wrap"><table><thead><tr><th>Día</th><th>Horario</th><th>Clase</th><th>Profesor</th><th class="num">Cupo</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function bindClases(){
+  const a=$("#cl-add");if(a)a.onclick=()=>{
+    const nombre=val("#cl-nombre");if(!nombre)return toast("Poné un nombre para la clase");
+    const c={id:pid(),nombre,profesor:val("#cl-prof"),dia:+val("#cl-dia"),horaInicio:val("#cl-ini"),horaFin:val("#cl-fin"),cupo:num("#cl-cupo")||1};
+    DB.clases.push(c);
+    guardarClaseRemota(c);
+    commit("Clase agregada ✓");
+  };
+  document.querySelectorAll("[data-delclase]").forEach(b=>b.onclick=()=>{
+    if(!confirm("¿Eliminar esta clase del horario?"))return;
+    const id=b.dataset.delclase;
+    DB.clases=DB.clases.filter(c=>c.id!==id);
+    borrarClaseRemota(id);
+    commit("Eliminada");
+  });
+}
+
+/* ================= SOCIOS ================= */
+function tSocios(){
+  const q=(S.socQ||"").toLowerCase();
+  const list=DB.socios.filter(s=>!q||s.nombre.toLowerCase().includes(q)||(s.dni||"").includes(q)).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  const planOpts=DB.planes.filter(p=>p.visible).map(p=>`<option value="${p.id}">${esc(p.nombre)} · ${money(p.precio)}</option>`).join("");
+  const form=`<div class="addform">
+    <div class="ff grow"><label>Nombre</label><input id="so-nombre" placeholder="Nombre y apellido"></div>
+    <div class="ff"><label>Teléfono</label><input id="so-tel" placeholder="Ej: 11 5555-5555"></div>
+    <div class="ff"><label>DNI</label><input id="so-dni" placeholder="Opcional"></div>
+    <div class="ff"><label>Plan inicial</label><select id="so-plan">${planOpts}</select></div>
+    <div class="ff"><label>Medio de pago</label><select id="so-pago">${PAGOS.map(m=>`<option>${m}</option>`).join("")}</select></div>
+    <button class="addbtn" id="so-add">＋ Dar de alta y cobrar 1ra cuota</button>
+  </div>`;
+  const rows=list.length?list.map(s=>{
+    const plan=planDe(s.planId);
+    const est=estadoVencimiento(s.vencimiento);
+    return `<tr><td>${avatarHTML(s.nombre,s.foto,"av-sm")}${esc(s.nombre)}${s.dni?`<br><small style="color:var(--ink-3)">DNI ${esc(s.dni)}</small>`:""}</td><td>${s.telefono?esc(s.telefono):"—"}</td><td>${plan?esc(plan.nombre):"—"}</td><td><span class="pill ${est.cls}">${est.txt}</span></td><td style="display:flex;gap:6px;flex-wrap:wrap"><button class="tbtn sm" data-portal="${s.id}" title="Copiar link del portal">Link portal</button><button class="del" data-delsocio="${s.id}" title="Eliminar socio">✕</button></td></tr>`;
+  }).join(""):`<tr><td colspan="5"><div class="empty">${q?"Sin resultados.":"Todavía no hay socios cargados."}</div></td></tr>`;
+  return head("Socios","Alta de socios, estado de cuota y link personal al portal de rutinas.",true)
+  +form
+  +`<div class="addform" style="margin-bottom:0"><div class="ff grow"><label>Buscar</label><input id="so-q" placeholder="Nombre o DNI" value="${esc(S.socQ)}"></div><button class="addbtn" id="so-buscar">Buscar</button>${q?'<button class="tbtn" id="so-limpiar" style="padding:11px 16px">Ver todos</button>':""}</div>
+  <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Socio</th><th>Teléfono</th><th>Plan</th><th>Estado</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function bindSocios(){
+  const f=$("#so-buscar");if(f)f.onclick=()=>{S.socQ=val("#so-q");render();};
+  const q=$("#so-q");if(q)q.addEventListener("keydown",e=>{if(e.key==="Enter"){S.socQ=q.value;render();}});
+  const l=$("#so-limpiar");if(l)l.onclick=()=>{S.socQ="";render();};
+  const a=$("#so-add");if(a)a.onclick=()=>{
+    const nombre=val("#so-nombre");if(!nombre)return toast("Poné el nombre del socio");
+    const plan=planDe(val("#so-plan"));if(!plan)return toast("Elegí un plan");
+    const fecha=today();
+    const socio={id:pid(),nombre,telefono:val("#so-tel")||null,dni:val("#so-dni")||null,fechaAlta:fecha,planId:plan.id,vencimiento:null,activo:true,foto:null,token:tokenSocio(),notas:""};
+    const pago=registrarPago(socio,plan,val("#so-pago")||"Efectivo",fecha);
+    DB.socios.push(socio);
+    guardarSocioRemoto(socio);
+    guardarPagoRemoto(pago);
+    commit("Socio dado de alta ✓");
+  };
+  document.querySelectorAll("[data-delsocio]").forEach(b=>b.onclick=()=>{
+    if(!confirm("¿Eliminar este socio? Se pierde su historial de pagos y rutina."))return;
+    const id=b.dataset.delsocio;
+    DB.socios=DB.socios.filter(s=>s.id!==id);
+    borrarSocioRemoto(id);
+    commit("Eliminado");
+  });
+  document.querySelectorAll("[data-portal]").forEach(b=>b.onclick=()=>{
+    const s=socioDe(b.dataset.portal);if(!s)return;
+    const link=portalLink(s.token);
+    (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(link):Promise.reject())
+      .then(()=>toast("Link del portal copiado ✓"))
+      .catch(()=>prompt("Copiá el link del portal:",link));
+  });
+}
+
+/* ================= CUOTAS ================= */
+function tCuotas(){
+  const socio=S.cuSocioId?socioDe(S.cuSocioId):null;
+  const planesVisibles=DB.planes.filter(p=>p.visible);
+  const plan=S.cuPlanId?planDe(S.cuPlanId):null;
+  const selectorSocio=`<div class="bf"><label>Socio</label><select id="cu-socio">
+    <option value="">Elegí un socio…</option>
+    ${DB.socios.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(s=>`<option value="${s.id}" ${S.cuSocioId===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}
+  </select></div>`;
+  const chips=planesVisibles.map(p=>`<button class="chip ${S.cuPlanId===p.id?"sel":""}" data-plan="${p.id}"><span>${esc(p.nombre)}</span><small>${money(p.precio)} · ${p.duracionDias} día${p.duracionDias===1?"":"s"}</small></button>`).join("");
+  const form=`<div class="bigform">
+    ${selectorSocio}
+    ${socio?`<div class="warnbox">Estado actual: <b>${estadoVencimiento(socio.vencimiento).txt}</b></div>`:""}
+    <div class="bf"><label>Plan</label><div class="chips">${chips}</div></div>
+    <div class="bf-row">
+      <div class="bf"><label>Fecha</label><input type="date" id="cu-fecha" value="${today()}"></div>
+      <div class="bf"><label>¿Con qué pagó?</label><select id="cu-pago">${PAGOS.map(m=>`<option>${m}</option>`).join("")}</select></div>
+    </div>
+    ${facturaCheckHTML("cu","El socio pidió factura")}
+    <button class="cargar" id="cu-add">✓ Registrar pago</button>
+  </div>`;
+  const recientes=DB.pagos.slice(0,20);
+  const rows=recientes.length?recientes.map(p=>`<tr><td>${fdate(p.fecha)}</td><td>${esc(p.socioNombre)}</td><td>${esc(p.planNombre)}</td><td class="num">${money(p.monto)}</td><td><span class="pill" style="background:var(--panel-3);color:var(--ink-2)">${esc(p.pago||"Efectivo")}</span></td></tr>`).join(""):`<tr><td colspan="5"><div class="empty">Sin pagos registrados todavía.</div></td></tr>`;
+  return head("Cuotas","Registrar el pago de la cuota de un socio — le extiende el vencimiento automáticamente.",true)
+  +(S.facturarPendiente?facturarCard(S.facturarPendiente):"")+form
+  +`<div class="card" style="margin-top:16px"><h3>Pagos recientes</h3><div class="tbl-wrap"><table><thead><tr><th>Fecha</th><th>Socio</th><th>Plan</th><th class="num">Monto</th><th>Pago</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function bindCuotas(){
+  const sel=$("#cu-socio");if(sel)sel.onchange=()=>{S.cuSocioId=sel.value;render();};
+  document.querySelectorAll("[data-plan]").forEach(b=>b.onclick=()=>{
+    document.querySelectorAll("[data-plan]").forEach(x=>x.classList.remove("sel"));b.classList.add("sel");
+    S.cuPlanId=b.dataset.plan;
+  });
+  const chk=$("#cu-fact-chk");if(chk)chk.onchange=()=>{$("#cu-fact-wrap").style.display=chk.checked?"":"none";};
+  bindFacturarCompartido();
+  const a=$("#cu-add");if(a)a.onclick=()=>{
+    const socio=socioDe(S.cuSocioId);if(!socio)return toast("Elegí un socio");
+    const plan=planDe(S.cuPlanId);if(!plan)return toast("Elegí un plan");
+    const fecha=val("#cu-fecha")||today();
+    const pago=registrarPago(socio,plan,val("#cu-pago")||"Efectivo",fecha);
+    guardarSocioRemoto(socio);
+    guardarPagoRemoto(pago);
+    S.facturarPendiente=($("#cu-fact-chk")&&$("#cu-fact-chk").checked)?{cliente:val("#cu-fact-nombre")||socio.nombre,doc:val("#cu-fact-doc"),concepto:plan.nombre,monto:plan.precio,fecha}:null;
+    S.cuSocioId="";S.cuPlanId="";
+    commit("Cuota registrada ✓ — vence "+fdate(socio.vencimiento));
+  };
+}
+
+/* ================= RUTINAS ================= */
+function rutinaDe(socioId){return DB.rutinas.find(r=>r.socioId===socioId);}
+function tRutinas(){
+  const isOwner=S.profile.type==="owner";
+  const socios=DB.socios.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  const socio=S.rutSocioId?socioDe(S.rutSocioId):null;
+  const selector=`<div class="bf" style="max-width:360px"><label>Socio</label><select id="ru-socio">
+    <option value="">Elegí un socio…</option>
+    ${socios.map(s=>`<option value="${s.id}" ${S.rutSocioId===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}
+  </select></div>`;
+  if(!socio)return head("Rutinas","Elegí un socio para ver o cargar su rutina.")+`<div class="bigform">${selector}</div>`;
+  if(S.rutEjercicios===null)S.rutEjercicios=JSON.parse(JSON.stringify((rutinaDe(socio.id)||{ejercicios:[]}).ejercicios));
+  const filas=S.rutEjercicios.map((e,i)=>`<div class="ejrow">
+    <div class="ff grow"><label>Ejercicio</label><input data-ej="nombre" data-i="${i}" value="${esc(e.nombre)}" placeholder="Ej: Sentadilla"></div>
+    <div class="ff"><label>Series</label><input data-ej="series" data-i="${i}" value="${esc(e.series)}" placeholder="4" style="width:70px"></div>
+    <div class="ff"><label>Reps</label><input data-ej="reps" data-i="${i}" value="${esc(e.reps)}" placeholder="12" style="width:70px"></div>
+    <div class="ff"><label>Peso</label><input data-ej="peso" data-i="${i}" value="${esc(e.peso)}" placeholder="Ej: 20kg" style="width:90px"></div>
+    <div class="ff grow"><label>Notas</label><input data-ej="notas" data-i="${i}" value="${esc(e.notas)}" placeholder="Opcional"></div>
+    <button class="del" data-delej="${i}">✕</button>
+  </div>`).join("");
+  const existente=rutinaDe(socio.id);
+  const link=portalLink(socio.token);
+  return head("Rutinas","Cargá los ejercicios de "+esc(socio.nombre)+" — los va a ver en su portal personal.",true)
+  +`<div class="bigform" style="margin-bottom:16px">${selector}</div>
+  <div class="warnbox">Link del portal de ${esc(socio.nombre)}: <b style="word-break:break-all">${esc(link)}</b> <button class="tbtn sm" id="ru-copiar" style="margin-left:6px">Copiar</button></div>
+  <div class="card"><h3>Ejercicios</h3>
+    ${filas||'<div class="empty">Todavía no cargaste ejercicios.</div>'}
+    <button class="tbtn" id="ru-agregar" style="margin-top:6px">＋ Agregar ejercicio</button>
+    <button class="cargar" id="ru-guardar" style="margin-top:16px;width:100%">✓ Guardar rutina</button>
+    ${existente?`<div class="sub" style="margin-top:10px">Última actualización: ${fmtHora(existente.actualizadoEn)||""} ${existente.actualizadoPor?"por "+esc(existente.actualizadoPor):""}</div>`:""}
+  </div>`;
+}
+function bindRutinas(){
+  const sel=$("#ru-socio");if(sel)sel.onchange=()=>{S.rutSocioId=sel.value;S.rutEjercicios=null;render();};
+  const add=$("#ru-agregar");if(add)add.onclick=()=>{S.rutEjercicios.push({nombre:"",series:"",reps:"",peso:"",notas:""});render();};
+  document.querySelectorAll("[data-delej]").forEach(b=>b.onclick=()=>{S.rutEjercicios.splice(+b.dataset.delej,1);render();});
+  document.querySelectorAll("[data-ej]").forEach(inp=>inp.oninput=()=>{S.rutEjercicios[+inp.dataset.i][inp.dataset.ej]=inp.value;});
+  const cp=$("#ru-copiar");if(cp)cp.onclick=()=>{
+    const socio=socioDe(S.rutSocioId);if(!socio)return;
+    const link=portalLink(socio.token);
+    (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(link):Promise.reject())
+      .then(()=>toast("Link copiado ✓"))
+      .catch(()=>prompt("Copiá el link del portal:",link));
+  };
+  const g=$("#ru-guardar");if(g)g.onclick=()=>{
+    const socio=socioDe(S.rutSocioId);if(!socio)return toast("Elegí un socio");
+    const limpio=S.rutEjercicios.filter(e=>e.nombre.trim());
+    const rutina={socioId:socio.id,socioNombre:socio.nombre,ejercicios:limpio,actualizadoEn:new Date().toISOString(),actualizadoPor:curProfesor()};
+    DB.rutinas=DB.rutinas.filter(r=>r.socioId!==socio.id);
+    DB.rutinas.push(rutina);
+    guardarRutinaRemota(rutina);
+    S.rutEjercicios=null;
+    commit("Rutina guardada ✓");
+  };
+}
+
+/* ================= OWNER: panel ================= */
+function tPanel(){
+  const fact=ingMes(CURM), gan=gananciaMes(CURM);
+  const activos=sociosActivos().length, porVencer=sociosPorVencer(), vencidos=sociosVencidos();
+  const hoyPendiente=!cierreExistente(today())&&(pagosDia(today()).length||gastosDia(today()).length);
+  const listaPorVencer=porVencer.length?porVencer.map(s=>`<div class="perm-row"><span class="pn">${esc(s.nombre)}<small>${estadoVencimiento(s.vencimiento).txt}</small></span></div>`).join(""):'<div class="empty">Nadie vence esta semana.</div>';
+  const listaVencidos=vencidos.length?vencidos.slice(0,10).map(s=>`<div class="perm-row"><span class="pn">${esc(s.nombre)}<small>${estadoVencimiento(s.vencimiento).txt}</small></span></div>`).join(""):'<div class="empty">No hay socios vencidos.</div>';
+  return head("Panel","Los números del gimnasio de un vistazo.",true)
+  +(hoyPendiente?`<div class="warnbox">Todavía no cerraste el día de hoy. <button data-tab="finanzas" data-subfin="cierre" style="border:0;background:none;color:var(--accent-ink);font-weight:700;text-decoration:underline;padding:0;cursor:pointer;font-size:inherit">Ir a Cierre diario →</button></div>`:"")
+  +`<div class="kpis">
+    ${kpi("Facturación del mes",money(fact),"cuotas cobradas")}
+    ${kpi("Ganancia del mes",money(gan),"tras gastos",gan>=0?1:2)}
+    ${kpi("Socios activos",activos,"con cuota al día")}
+    ${kpi("Vencidos",vencidos.length,"hay que cobrarles",vencidos.length>0?2:0)}
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Vencen esta semana (${porVencer.length})</h3>${listaPorVencer}</div>
+    <div class="card"><h3>Vencidos (${vencidos.length})</h3>${listaVencidos}</div>
+  </div>`;
+}
+function kpi(lbl,val,delta,tone){const cls=tone===1?"up-c":tone===2?"dn-c":"";return `<div class="kpi"><div class="lbl">${lbl}</div><div class="val tnum">${val}</div><div class="delta ${cls}">${delta}</div></div>`;}
+
+/* ================= CIERRE DIARIO ================= */
+function tCierre(){
+  const fecha=S.cierreFecha;
+  const existente=cierreExistente(fecha);
+  const t=existente?existente.totales:calcularCierre(fecha);
+  const medios=PAGOS.map(m=>`<div class="hbar"><div class="hl"><span>${m}</span><span class="tnum">${money(t.porMedio[m].neto)}</span></div><div class="ht"><div class="hf" style="width:${t.facturadoTotal?Math.max(4,t.porMedio[m].ingresos/Math.max(1,t.facturadoTotal)*100):0}%"></div></div></div>`).join("");
+  const histRows=[...DB.cierres].sort((a,b)=>b.fecha.localeCompare(a.fecha)).slice(0,60).map(c=>`<tr><td>${fdate(c.fecha)}</td><td class="num">${c.totales.pagosCant}</td><td class="num">${money(c.totales.facturadoTotal)}</td><td class="num">${money(c.totales.gastosTotal)}</td><td class="num" style="font-weight:700;color:${c.totales.gananciaNeta>=0?"var(--good)":"var(--crit)"}">${money(c.totales.gananciaNeta)}</td><td>${esc(c.cerradoPor)} · ${fmtHora(c.cerradoEn)}</td></tr>`).join("");
+  return head("Cierre diario","Registro inmutable de caja por día.",true)
+  +`<div class="addform" style="margin-bottom:16px"><div class="ff"><label>Fecha</label><input type="date" id="ci-fecha" value="${fecha}"></div></div>
+  <div class="kpis">
+    ${kpi("Pagos del día",t.pagosCant,"cuotas cobradas")}
+    ${kpi("Facturado",money(t.facturadoTotal),"")}
+    ${kpi("Gastos",money(t.gastosTotal),"")}
+    ${kpi("Ganancia neta",money(t.gananciaNeta),"para el gimnasio",t.gananciaNeta>=0?1:2)}
+  </div>
+  <div class="card"><h3>Por medio de pago</h3>${medios}</div>
+  ${existente
+    ?`<div class="warnbox">Este día ya está cerrado (${fmtHora(existente.cerradoEn)} por ${esc(existente.cerradoPor)}). El registro queda fijo aunque sigas cargando pagos de otros días.</div>`
+    :`<button class="cargar" id="cerrar-dia" style="width:100%">🔒 Cerrar este día</button>`}
+  <div class="card" style="margin-top:16px"><h3>Historial de cierres</h3><div class="tbl-wrap"><table><thead><tr><th>Fecha</th><th class="num">Pagos</th><th class="num">Facturado</th><th class="num">Gastos</th><th class="num">Ganancia</th><th>Cerrado</th></tr></thead><tbody>${histRows||'<tr><td colspan="6"><div class="empty">Sin cierres todavía.</div></td></tr>'}</tbody></table></div><button class="tbtn" id="csv-cierres" style="margin-top:10px">Descargar CSV</button></div>`;
+}
+function bindCierre(){
+  const f=$("#ci-fecha");if(f)f.onchange=()=>{S.cierreFecha=f.value||today();render();};
+  const c=$("#cerrar-dia");if(c)c.onclick=()=>{if(confirm("¿Cerrar la caja del "+fdate(S.cierreFecha)+"? Esto queda fijo como registro histórico."))cerrarDia(S.cierreFecha);};
+  const dl=$("#csv-cierres");if(dl)dl.onclick=descargarCierresCSV;
+}
+
+/* ================= PROFESORES ================= */
+function tProfesores(){
+  const rows=DB.profesores.map((b,i)=>`<div class="perm-row"><span class="pn"><button class="av-edit" data-fotob="${i}" title="Cambiar foto">${avatarHTML(b.n,b.foto,"av-sm")}<span class="av-edit-badge">✎</span></button>${esc(b.n)}</span><div style="display:flex;align-items:center;gap:6px">${b.foto?`<button class="tbtn" data-fotobclear="${i}" style="padding:6px 10px;font-size:11px">Quitar foto</button>`:""}<button class="del" data-delb="${esc(b.n)}" title="Eliminar profesor">✕</button></div><input type="file" accept="image/*" id="foto-in-${i}" style="display:none"></div>`).join("");
+  return head("Profesores","Quiénes trabajan en el gimnasio.",true)
+  +`<div class="card"><div class="addform"><div class="ff grow"><label>Nombre</label><input id="pr-nombre" placeholder="Nombre del profesor"></div><button class="addbtn" id="pr-add">＋ Agregar</button></div>${rows||'<div class="empty">Sin profesores cargados.</div>'}</div>`;
+}
+function bindProfesores(){
+  const a=$("#pr-add");if(a)a.onclick=()=>{
+    const n=val("#pr-nombre");if(!n)return toast("Poné un nombre");
+    if(DB.profesores.find(b=>b.n===n))return toast("Ya existe un profesor con ese nombre");
+    DB.profesores.push({n,foto:null});commit("Profesor agregado ✓");
+  };
+  document.querySelectorAll("[data-delb]").forEach(b=>b.onclick=()=>{
+    if(confirm("¿Eliminar a "+b.dataset.delb+"? No se puede deshacer."))
+      {DB.profesores=DB.profesores.filter(x=>x.n!==b.dataset.delb);commit("Eliminado");}
+  });
+  document.querySelectorAll("[data-fotob]").forEach(btn=>btn.onclick=()=>$("#foto-in-"+btn.dataset.fotob).click());
+  document.querySelectorAll("[data-fotobclear]").forEach(btn=>btn.onclick=()=>{DB.profesores[+btn.dataset.fotobclear].foto=null;commit("Foto quitada");});
+  DB.profesores.forEach((b,i)=>{const inp=$("#foto-in-"+i);if(inp)inp.onchange=e=>{const f=e.target.files[0];leerFotoComoDataURL(f,180,dataUrl=>{DB.profesores[i].foto=dataUrl;commit("Foto actualizada ✓");});};});
+}
+
+/* ================= PLANES Y PRECIOS ================= */
+function tPlanes(){
+  const rows=DB.planes.map(p=>`<tr><td><input class="miniin" style="width:160px;text-align:left" data-campo="nombre" data-id="${p.id}" value="${esc(p.nombre)}"></td><td class="num"><input class="miniin" type="number" data-campo="precio" data-id="${p.id}" value="${p.precio}"></td><td class="num"><input class="miniin" type="number" data-campo="duracionDias" data-id="${p.id}" value="${p.duracionDias}" style="width:80px"></td><td><label style="display:flex;align-items:center;gap:6px;justify-content:center"><input type="checkbox" data-campo="visible" data-id="${p.id}" ${p.visible?"checked":""}></label></td><td><button class="del" data-delplan="${p.id}">✕</button></td></tr>`).join("");
+  return head("Planes y precios","Actualizá precios y duración cuando aumentes. No cambia los pagos ya cobrados.",true)
+  +`<div class="warnbox"><b>Importante:</b> al editar un plan acá se usa para los próximos pagos. Los pagos ya cargados quedan con el monto original.</div>
+  <div class="card"><div class="addform"><div class="ff grow"><label>Nombre</label><input id="pl-nombre" placeholder="Ej: Anual"></div><div class="ff"><label>Precio</label><input type="number" id="pl-precio" value="0"></div><div class="ff"><label>Duración (días)</label><input type="number" id="pl-dias" value="30"></div><button class="addbtn" id="pl-add">＋ Agregar plan</button></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th class="num">Precio</th><th class="num">Duración (días)</th><th>Visible</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+  <button class="savebtn" id="save-planes" style="margin-top:14px">Guardar cambios</button></div>`;
+}
+function bindPlanes(){
+  const a=$("#pl-add");if(a)a.onclick=()=>{
+    const n=val("#pl-nombre");if(!n)return toast("Poné un nombre");
+    DB.planes.push({id:pid(),nombre:n,precio:num("#pl-precio"),duracionDias:num("#pl-dias")||30,visible:true});
+    commit("Plan agregado ✓");
+  };
+  document.querySelectorAll("[data-delplan]").forEach(b=>b.onclick=()=>{
+    if(confirm("¿Eliminar este plan? Los socios que ya lo tienen asignado no se modifican."))
+      {DB.planes=DB.planes.filter(p=>p.id!==b.dataset.delplan);commit("Eliminado");}
+  });
+  const s=$("#save-planes");if(s)s.onclick=()=>{
+    document.querySelectorAll("[data-campo]").forEach(inp=>{
+      const p=DB.planes.find(x=>x.id===inp.dataset.id);if(!p)return;
+      const campo=inp.dataset.campo;
+      if(campo==="visible")p.visible=inp.checked;
+      else if(campo==="nombre")p.nombre=inp.value;
+      else p[campo]=Math.max(campo==="duracionDias"?1:0,+inp.value||0);
+    });
+    commit("Planes actualizados ✓");
+  };
+}
+
+/* ================= GASTOS ================= */
+function tGastos(){
+  const list=[...DB.gastos].sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  const rows=list.length?list.map(g=>`<tr><td>${fdate(g.fecha)}</td><td>${esc(g.desc)}</td><td>${esc(g.cat||"General")}</td><td class="num">${money(g.monto)}</td><td><button class="del" data-delg="${g.id}">✕</button></td></tr>`).join(""):`<tr><td colspan="5"><div class="empty">Sin gastos cargados.</div></td></tr>`;
+  return head("Gastos y sueldos","Alquiler, sueldos de profesores, compras grandes, etc.",true)
+  +`<div class="addform"><div class="ff"><label>Fecha</label><input type="date" id="ga-fecha" value="${today()}"></div><div class="ff grow"><label>Descripción</label><input id="ga-desc" placeholder="Ej: Sueldo profesor, alquiler, luz..."></div><div class="ff"><label>Categoría</label><input id="ga-cat" placeholder="Ej: Sueldos"></div><div class="ff"><label>Monto</label><input type="number" id="ga-monto" value="0"></div><button class="addbtn" id="ga-add">＋ Agregar</button></div>
+  <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th class="num">Monto</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><div class="totbar"><span>Total</span><b class="tnum">${money(sumBy(DB.gastos,g=>g.monto))}</b></div></div>`;
+}
+function bindGastos(){
+  const a=$("#ga-add");if(a)a.onclick=()=>{
+    const desc=val("#ga-desc");if(!desc)return toast("Poné una descripción");
+    const monto=num("#ga-monto");if(monto<=0)return toast("Poné un monto");
+    DB.gastos.push({id:pid(),fecha:val("#ga-fecha")||today(),desc,cat:val("#ga-cat")||"General",monto,mes:monthOf(val("#ga-fecha")||today())});
+    commit("Gasto agregado ✓");
+  };
+}
+function bindDeletes(){
+  document.querySelectorAll("[data-delg]").forEach(b=>b.onclick=()=>{DB.gastos=DB.gastos.filter(x=>x.id!==b.dataset.delg);commit("Eliminado");});
+}
+
+/* ================= OWNER: config ================= */
+function tConfig(){
+  const usaLoginReal=!!(sb&&S.authUser);
+  const seguridadCard=usaLoginReal
+    ?`<div class="card"><h3>Tu sesión</h3><div class="sub">Entraste como <b>${esc(S.authUser.email)}</b>.</div><button class="tbtn" id="logout" style="border-color:var(--crit);color:var(--crit)">Cerrar sesión</button></div>`
+    :"";
+  const pinCard=`<div class="card"><h3>Clave para entrar como Dueño</h3><div class="sub">${usaLoginReal?'Se pide al elegir "Dueño" desde el selector rápido de perfiles, además de tu login.':"Es el código de 4 dígitos para entrar a este modo"}</div><div class="addform" style="margin-bottom:0"><div class="ff"><label>Clave actual</label><input type="password" id="pin-old" maxlength="4" inputmode="numeric" placeholder="••••"></div><div class="ff"><label>Nueva clave (4 díg.)</label><input type="password" id="pin-new" maxlength="4" inputmode="numeric" placeholder="••••"></div><button class="addbtn" id="pin-save">Guardar clave</button></div></div>`;
+  const invitarCard=(usaLoginReal&&S.profile.type==="owner")
+    ?`<div class="card"><h3>Invitar a alguien</h3><div class="sub">Generá un código y pasáselo (WhatsApp, en persona, como quieras). Con eso crea su propio acceso desde este sistema, sin que nadie tenga que entrar a Supabase.</div>
+      <div class="addform">
+        <div class="ff"><label>Tipo de acceso</label><select id="inv-tipo"><option value="barber" selected>Profesor</option><option value="owner">Dueño / socio del negocio</option></select></div>
+        <div class="ff grow"><label>Nombre (opcional para dueño)</label><input id="inv-nombre" placeholder="Ej: Marcos" value="${esc(S.nuevoInvNombre)}"></div>
+        <button class="addbtn" id="inv-generar">Generar código</button>
+      </div>
+      ${S.nuevoInvCodigo?`<div class="totbar"><span>Código${S.nuevoInvNombre?" para "+esc(S.nuevoInvNombre):""}</span><b class="tnum" style="font-size:19px;letter-spacing:.05em">${esc(S.nuevoInvCodigo)}</b></div>`:""}
+      ${S.invitaciones.length?`<div class="tbl-wrap" style="margin-top:14px"><table><thead><tr><th>Código</th><th>Para</th><th>Estado</th></tr></thead><tbody>${S.invitaciones.map(i=>`<tr><td style="font-family:ui-monospace,monospace">${esc(i.codigo)}</td><td>${i.tipo==="owner"?"Dueño":"Profesor"+(i.nombre?" · "+esc(i.nombre):"")}</td><td><span class="pill ${i.usado?"done":"pend"}">${i.usado?"Usado":"Pendiente"}</span></td></tr>`).join("")}</tbody></table></div>`:""}
+      </div>`
+    :"";
+  const accesosCard=(usaLoginReal&&S.profile.type==="owner")
+    ?`<div class="card"><h3>Accesos actuales</h3><div class="sub">Quién ya entró y qué rol tiene.</div>
+      ${S.accesos.length?S.accesos.map(a=>`<div class="perm-row"><span class="pn">${esc(a.email||"(sin mail)")}<small>${a.tipo==="owner"?"Dueño":"Profesor"+(a.nombre?" · "+esc(a.nombre):"")}</small></span><button class="del" data-delacceso="${a.id}" title="Quitar el rol asignado (no borra la cuenta de acceso)">✕</button></div>`).join(""):'<div class="empty">Todavía no hay nadie más con acceso.</div>'}
+      </div>`
+    :"";
+  return head("Configuración","Marca, clave, respaldo y datos.",true)
+  +`<div class="card"><h3>Nombre y logo del gimnasio</h3><div class="sub">Se ve arriba de todo y en la pantalla de selección de perfil</div>
+    <div class="addform" style="margin-bottom:14px"><div class="ff grow"><label>Nombre del gimnasio</label><input id="cfg-nombre" value="${esc(DB.nombre||"Mi Gimnasio")}" placeholder="Ej: Gimnasio Fuerza"></div><button class="addbtn" id="cfg-nombre-save">Guardar nombre</button></div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="width:64px;height:64px;border-radius:16px;overflow:hidden;border:1px solid var(--line);flex:none"><img id="cfg-logo-preview" src="${DB.logo||DEFAULT_LOGO}" style="width:100%;height:100%;object-fit:cover;display:block"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <label class="tbtn" style="cursor:pointer">Subir logo<input type="file" accept="image/*" id="cfg-logo-in" style="display:none"></label>
+        ${DB.logo?'<button class="tbtn" id="cfg-logo-reset">Volver al ícono por defecto</button>':""}
+      </div>
+    </div></div>
+  ${seguridadCard}
+  ${pinCard}
+  ${invitarCard}
+  ${accesosCard}
+  <div class="card"><h3>Respaldo de datos</h3><div class="sub">Guardá una copia por las dudas (recomendado hacerlo cada tanto). Podés restaurarla en cualquier compu.</div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="savebtn" id="export">Descargar respaldo</button><label class="tbtn" style="cursor:pointer">Restaurar respaldo<input type="file" id="import" accept="application/json" style="display:none"></label></div></div>
+  <div class="card"><h3>Empezar de cero</h3><div class="sub">Si estuviste probando la app con datos de prueba, borralos antes de usarla en serio.</div><button class="tbtn" id="wipe" style="border-color:var(--crit);color:var(--crit)">Borrar socios, pagos, gastos y asistencias cargadas</button></div>`;
+}
+function bindConfig(){
+  const ps=$("#pin-save");if(ps)ps.onclick=()=>{if(val("#pin-old")!==DB.pin)return toast("La clave actual no coincide");const nw=val("#pin-new");if(!/^\d{4}$/.test(nw))return toast("La nueva clave debe ser 4 dígitos");DB.pin=nw;commit("Clave actualizada ✓");};
+  const lo=$("#logout");if(lo)lo.onclick=async()=>{await sb.auth.signOut();};
+  if(sb&&S.authUser&&S.profile&&S.profile.type==="owner"&&!S.accesosCargados){
+    S.accesosCargados=true;
+    cargarPerfilesRemotos().then(list=>{S.accesos=list;if(S.tab==="config")render();});
+  }
+  if(sb&&S.authUser&&S.profile&&S.profile.type==="owner"&&!S.invitacionesCargadas){
+    S.invitacionesCargadas=true;
+    cargarInvitacionesRemotas().then(list=>{S.invitaciones=list;if(S.tab==="config")render();});
+  }
+  document.querySelectorAll("[data-delacceso]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("¿Quitar este acceso? La próxima vez que esta persona entre va a tener que pedir un código de invitación nuevo. Esto NO borra su cuenta de acceso — solo el rol asignado."))return;
+    const ok=await borrarPerfilRemoto(b.dataset.delacceso);
+    if(ok){S.accesos=S.accesos.filter(a=>a.id!==b.dataset.delacceso);toast("Acceso quitado ✓");render();}
+    else toast("No se pudo quitar, probá de nuevo");
+  });
+  const ig=$("#inv-generar");if(ig)ig.onclick=async()=>{
+    const tipo=val("#inv-tipo")==="owner"?"owner":"barber";
+    const nombre=val("#inv-nombre").trim();
+    ig.disabled=true;ig.textContent="Generando…";
+    const codigo=await crearInvitacionRemota(tipo,nombre||null);
+    ig.disabled=false;ig.textContent="Generar código";
+    if(!codigo)return toast("No se pudo generar el código, probá de nuevo");
+    if(tipo==="barber"&&nombre&&!DB.profesores.find(b=>b.n===nombre)){DB.profesores.push({n:nombre,foto:null});save();guardarConfigRemota();}
+    S.nuevoInvNombre=nombre;S.nuevoInvCodigo=codigo;
+    S.invitaciones.unshift({codigo,tipo,nombre:nombre||null,usado:false});
+    render();
+    toast("Código generado ✓");
+  };
+  const ex=$("#export");if(ex)ex.onclick=()=>{const blob=new Blob([JSON.stringify(DB,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=slugNombre()+"-respaldo-"+today()+".json";a.click();toast("Respaldo descargado ✓");};
+  const im=$("#import");if(im)im.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.profesores||!d.planes)throw 0;DB=d;commit("Datos restaurados ✓");}catch(err){toast("Archivo no válido");}};r.readAsText(f);};
+  const w=$("#wipe");if(w)w.onclick=()=>{if(confirm("¿Borrar TODOS los datos cargados (socios, pagos, gastos, asistencias, rutinas)? Se mantienen profesores, planes, nombre y logo.")){DB.socios=[];DB.pagos=[];DB.gastos=[];DB.asistencias=[];DB.rutinas=[];commit("Listo, empezá a cargar");}};
+  const cn=$("#cfg-nombre-save");if(cn)cn.onclick=()=>{const n=val("#cfg-nombre");if(!n)return toast("Poné un nombre");DB.nombre=n;commit("Nombre actualizado ✓");};
+  const li=$("#cfg-logo-in");if(li)li.onchange=e=>{const f=e.target.files[0];leerFotoComoDataURL(f,240,dataUrl=>{DB.logo=dataUrl;commit("Logo actualizado ✓");});};
+  const lr=$("#cfg-logo-reset");if(lr)lr.onclick=()=>{DB.logo=null;commit("Logo restablecido");};
+}
+
+/* ================= ROUTER ================= */
+function render(){
+  renderWho();
+  if(sb){
+    if(!S.authReady){root.innerHTML="";$("#foot").textContent="";return;}
+    if(!S.authUser){root.innerHTML=viewAuth();bindAuth();$("#foot").textContent="";return;}
+    if(!S.perfil){root.innerHTML=viewOnboarding();bindOnboarding();$("#foot").textContent="";return;}
+    if(S.perfil.tipo==="owner"&&!S.profile){root.innerHTML=viewQuickSwitch();bindQuickSwitch();$("#foot").textContent="";return;}
+    if(S.profile&&S.profile.type==="pin"){root.innerHTML=viewPin();bindPin();$("#foot").textContent="";return;}
+    if(!S.profile)aplicarPerfil();
+  }else{
+    if(!S.profile){root.innerHTML=viewSelect();bindSelect();$("#foot").textContent="Prototipo funcional · los datos se guardan en esta computadora.";return;}
+    if(S.profile.type==="pin"){root.innerHTML=viewPin();bindPin();$("#foot").textContent="";return;}
+  }
+  root.innerHTML=viewApp();
+  document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;if(b.dataset.subfin)S.subFin=b.dataset.subfin;render();});
+  document.querySelectorAll("[data-subfin]:not([data-tab])").forEach(b=>b.onclick=()=>{S.subFin=b.dataset.subfin;render();});
+  bindCheckin();bindClases();bindSocios();bindCuotas();bindRutinas();bindCierre();bindProfesores();bindPlanes();bindGastos();bindConfig();bindDeletes();
+  $("#foot").textContent=sb?"Datos sincronizados con la nube.":"Datos guardados en esta compu (localStorage). Hacé un respaldo cada tanto desde Configuración.";
+}
+
+/* ---------- boot ---------- */
+DB=load();
+if(!DB){DB=defaultDB();save();}
+if(DB.nombre===undefined)DB.nombre="Mi Gimnasio";
+if(DB.logo===undefined)DB.logo=null;
+if(DB.cierres===undefined)DB.cierres=[];
+if(DB.rutinas===undefined)DB.rutinas=[];
+if(DB.asistencias===undefined)DB.asistencias=[];
+(DB.planes||[]).forEach(p=>{if(p.visible===undefined)p.visible=true;});
+(DB.profesores||[]).forEach(b=>{if(b.foto===undefined)b.foto=null;});
+(DB.socios||[]).forEach(s=>{if(!s.token)s.token=tokenSocio();});
+paintBrand();
+
+async function sincronizarDesdeLaNube(){
+  await Promise.all([cargarConfigRemota(),cargarSociosRemotos(),cargarPagosRemotos(),cargarClasesRemotas(),cargarRutinasRemotas(),cargarAsistenciasRemotas(today())]);
+  save();paintBrand();
+  guardarConfigRemota();
+}
+async function resolverPerfilYArrancar(){
+  await sincronizarDesdeLaNube();
+  const perfil=await cargarPerfil(S.authUser.id);
+  if(perfil){S.perfil={tipo:perfil.tipo,nombre:perfil.nombre,email:perfil.email};aplicarPerfil();}
+  else{S.perfil=null;}
+  render();
+}
+(async function boot(){
+  if(sb){
+    const{data:{session}}=await sb.auth.getSession();
+    S.authUser=session?session.user:null;
+    sb.auth.onAuthStateChange((_event,session)=>{
+      const prevId=S.authUser&&S.authUser.id;
+      S.authUser=session?session.user:null;
+      if(S.authUser&&S.authUser.id!==prevId){S.accesos=[];S.accesosCargados=false;S.invitaciones=[];S.invitacionesCargadas=false;resolverPerfilYArrancar();}
+      else if(!S.authUser){S.profile=null;S.perfil=null;S.accesos=[];S.accesosCargados=false;S.invitaciones=[];S.invitacionesCargadas=false;S.nuevoInvCodigo=null;S.nuevoInvNombre="";render();}
+    });
+    S.authReady=true;
+    if(S.authUser)await resolverPerfilYArrancar();else render();
+  }else{
+    S.authReady=true;
+    render();
+  }
+})();
+</script>
