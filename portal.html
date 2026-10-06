@@ -44,7 +44,8 @@
 "use strict";
 const SUPABASE_URL="https://tu-proyecto.supabase.co";
 const SUPABASE_ANON_KEY="tu-publishable-key-aqui";
-const sb=(typeof window.supabase!=="undefined")?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
+const sbConfigurado=SUPABASE_URL&&!SUPABASE_URL.includes("tu-proyecto")&&SUPABASE_ANON_KEY&&!SUPABASE_ANON_KEY.includes("tu-publishable-key");
+const sb=(sbConfigurado&&typeof window.supabase!=="undefined")?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
 const DEFAULT_LOGO="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAgMTIwIj4KPGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iNTgiIGZpbGw9IiNEQ0VGRTIiIHN0cm9rZT0iIzFGN0E0RCIgc3Ryb2tlLXdpZHRoPSIzIi8+CjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDYwLDYwKSIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMUY3QTREIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+CjxsaW5lIHgxPSItMzQiIHkxPSIwIiB4Mj0iMzQiIHkyPSIwIi8+CjxsaW5lIHgxPSItMzQiIHkxPSItMTQiIHgyPSItMzQiIHkyPSIxNCIvPgo8bGluZSB4MT0iMzQiIHkxPSItMTQiIHgyPSIzNCIgeTI9IjE0Ii8+CjxsaW5lIHgxPSItMjAiIHkxPSItOCIgeDI9Ii0yMCIgeTI9IjgiLz4KPGxpbmUgeDE9IjIwIiB5MT0iLTgiIHgyPSIyMCIgeTI9IjgiLz4KPC9nPgo8L3N2Zz4=";
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function fdate(iso){if(!iso)return "—";const p=iso.split("-");return p.length===3?p[2]+"/"+p[1]:iso;}

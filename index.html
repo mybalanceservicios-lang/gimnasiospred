@@ -205,7 +205,10 @@ const DEFAULT_LOGO="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My
 /* ---------- Supabase: compartido entre dispositivos ---------- */
 const SUPABASE_URL="https://tu-proyecto.supabase.co";
 const SUPABASE_ANON_KEY="tu-publishable-key-aqui";
-const sb=(typeof window.supabase!=="undefined")?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
+// si todavía quedan las credenciales de ejemplo (plantilla recién clonada, sin conectar a un proyecto
+// real), lo tratamos como "sin backend" en vez de armar un cliente que nunca va a poder loguearse.
+const sbConfigurado=SUPABASE_URL&&!SUPABASE_URL.includes("tu-proyecto")&&SUPABASE_ANON_KEY&&!SUPABASE_ANON_KEY.includes("tu-publishable-key");
+const sb=(sbConfigurado&&typeof window.supabase!=="undefined")?window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY):null;
 // evita que un pedido colgado (wifi/datos con problemas) deje algo esperando para siempre
 function conTimeout(promesa,ms){
   return Promise.race([
