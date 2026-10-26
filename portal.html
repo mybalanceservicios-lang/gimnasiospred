@@ -36,8 +36,14 @@
   .empty{text-align:center;color:var(--ink-3);font-size:13.5px;padding:20px 10px}
   .loading{text-align:center;color:var(--ink-3);padding:60px 10px;font-size:14px}
   .footer{margin-top:22px;color:var(--ink-3);font-size:11.5px;text-align:center}
+
+  .rt-watermark{position:fixed;right:16px;bottom:16px;z-index:200;display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:11px;letter-spacing:.02em;color:var(--ink-2);background:var(--panel);border:1px solid var(--line);padding:7px 13px;border-radius:20px;box-shadow:var(--shadow-lg);text-decoration:none;cursor:pointer;transition:background .2s ease}
+  .rt-watermark:hover{background:var(--panel-2)}
+  .rt-watermark b{color:var(--accent-ink);font-weight:800}
+  .rt-watermark .dot{width:5px;height:5px;background:var(--accent);border-radius:1px;transform:rotate(45deg);flex-shrink:0}
 </style>
 <div class="wrap" id="app"><div class="loading">Cargando tu rutina…</div></div>
+<a class="rt-watermark" href="https://www.instagram.com/rt.designweb/" target="_blank" rel="noopener"><span class="dot"></span>Diseñado por <b>RT Design</b></a>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
